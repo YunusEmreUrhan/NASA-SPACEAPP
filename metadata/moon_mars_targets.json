@@ -1,0 +1,172 @@
+{
+    "MOON_SHACKLETON_RIM": {
+        "id": "MOON_SHACKLETON_RIM",
+        "body": "Moon",
+        "name": "Shackleton Crater Rim (Artemis South Pole Base)",
+        "lat": -89.9,
+        "lon": 0.0,
+        "radius_km": 5.0,
+        "recommended_zoom": 12,
+        "gravity_g": 0.165,
+        "pressure_mbar": 0.0,
+        "mean_temp_c": -180.0,
+        "radiation_msv_yr": 380.0,
+        "nasa_missions": [
+            "NASA LRO LOLA (Topography)",
+            "LRO Diviner (Thermal)",
+            "LCROSS (Water Ice)"
+        ],
+        "primary_process": "Cryospheric Cold-Trap & Impact Cratering",
+        "mission_focus": "ISRU Water Mining & Peaks of Eternal Light Power",
+        "features_6d": [
+            0.65,
+            0.62,
+            0.96,
+            0.96,
+            0.2,
+            0.45
+        ],
+        "description": "Kalici golgeli krater tabaninda su buzu (ISRU) ve sirtlarinda kesintisiz gunes isigi sunan birincil Artemis us adayi."
+    },
+    "MOON_MARE_TRANQUILLITATIS_PIT": {
+        "id": "MOON_MARE_TRANQUILLITATIS_PIT",
+        "body": "Moon",
+        "name": "Mare Tranquillitatis Skylight Pit (Lava Tube Base)",
+        "lat": 8.33,
+        "lon": 33.22,
+        "radius_km": 5.0,
+        "recommended_zoom": 13,
+        "gravity_g": 0.165,
+        "pressure_mbar": 0.0,
+        "mean_temp_c": -20.0,
+        "radiation_msv_yr": 420.0,
+        "nasa_missions": [
+            "NASA LRO NAC (Radar & Optical)",
+            "GRAIL (Gravity Anomaly)"
+        ],
+        "primary_process": "Volcanic Lava Tube Roof Collapse (Skylight)",
+        "mission_focus": "Radiation-Shielded Underground Habitat Construction",
+        "features_6d": [
+            0.92,
+            0.76,
+            0.85,
+            0.06,
+            0.65,
+            0.94
+        ],
+        "description": "100 metre derinliginde cokmus bazaltik lav tupu girisi. Radyasyon ve mikrometeoritlerden korunan yeralti ussu adayi."
+    },
+    "MOON_MARIUS_HILLS": {
+        "id": "MOON_MARIUS_HILLS",
+        "body": "Moon",
+        "name": "Marius Hills Volcanic Complex & Skylight",
+        "lat": 14.1,
+        "lon": -56.8,
+        "radius_km": 5.0,
+        "recommended_zoom": 12,
+        "gravity_g": 0.165,
+        "pressure_mbar": 0.0,
+        "mean_temp_c": -50.0,
+        "radiation_msv_yr": 410.0,
+        "nasa_missions": [
+            "NASA LRO LOLA",
+            "SELENE/Kaguya Radar"
+        ],
+        "primary_process": "Basaltic Shield Volcanism & Lava Channels",
+        "mission_focus": "Volcanic Regolith ISRU (3D Printing) & Subsurface Access",
+        "features_6d": [
+            0.9,
+            0.74,
+            0.84,
+            0.08,
+            0.68,
+            0.9
+        ],
+        "description": "Ay'in en yogun volkanik kubbe ve lav kanali bolgesi. Bazaltik regolitten 3B baski ile us insasi icin ideal."
+    },
+    "MARS_ARCADIA_PLANITIA": {
+        "id": "MARS_ARCADIA_PLANITIA",
+        "body": "Mars",
+        "name": "Arcadia Planitia (Human Landing & Ice ISRU Base)",
+        "lat": 39.2,
+        "lon": 172.0,
+        "radius_km": 5.0,
+        "recommended_zoom": 12,
+        "gravity_g": 0.378,
+        "pressure_mbar": 6.5,
+        "mean_temp_c": -65.0,
+        "radiation_msv_yr": 210.0,
+        "nasa_missions": [
+            "Mars Reconnaissance Orbiter (SHARAD Radar & HiRISE)",
+            "MGS MOLA"
+        ],
+        "primary_process": "Periglacial Shallow Subsurface Ice Sheet & Volcanic Plains",
+        "mission_focus": "Starship Heavy Landing & Shallow Water-Ice Drilling (ISRU)",
+        "features_6d": [
+            0.7,
+            0.9,
+            0.88,
+            0.92,
+            0.55,
+            0.35
+        ],
+        "description": "Duz bazaltik ova ve yuzeyin 1-2 metre altinda devasa su buzu tabakasi barindiran birincil insanli Mars us adayi."
+    },
+    "MARS_JEZERO_CRATER": {
+        "id": "MARS_JEZERO_CRATER",
+        "body": "Mars",
+        "name": "Jezero Crater Paleo-Lake Delta (Astrobiology Base)",
+        "lat": 18.38,
+        "lon": 77.58,
+        "radius_km": 5.0,
+        "recommended_zoom": 12,
+        "gravity_g": 0.378,
+        "pressure_mbar": 6.1,
+        "mean_temp_c": -60.0,
+        "radiation_msv_yr": 230.0,
+        "nasa_missions": [
+            "Mars 2020 Perseverance",
+            "MRO CRISM (Mineralogy)",
+            "MGS MOLA"
+        ],
+        "primary_process": "Fluvial-Lacustrine Sedimentation & Carbonate/Evaporite Alteration",
+        "mission_focus": "Astrobiology Biosignature Search & Autonomous Rover Traverse",
+        "features_6d": [
+            0.76,
+            0.74,
+            0.8,
+            0.18,
+            0.84,
+            0.45
+        ],
+        "description": "Eski nehir deltasi, magnezyum karbonat, evaporit tuzlar ve kil mineralleri iceren krater havzasi."
+    },
+    "MARS_ARSIA_MONS_CAVES": {
+        "id": "MARS_ARSIA_MONS_CAVES",
+        "body": "Mars",
+        "name": "Arsia Mons 'Seven Sisters' Skylights (Martian Subsurface Base)",
+        "lat": -7.2,
+        "lon": -120.5,
+        "radius_km": 5.0,
+        "recommended_zoom": 13,
+        "gravity_g": 0.378,
+        "pressure_mbar": 2.0,
+        "mean_temp_c": -75.0,
+        "radiation_msv_yr": 280.0,
+        "nasa_missions": [
+            "Mars Odyssey THEMIS (Thermal Inertia)",
+            "MRO HiRISE"
+        ],
+        "primary_process": "Flank Volcano Lava Tube Collapse & High-Altitude Aridity",
+        "mission_focus": "Subsurface Radiation Shelter & Cave Robotics Exploration",
+        "features_6d": [
+            0.92,
+            0.62,
+            0.9,
+            0.1,
+            0.72,
+            0.95
+        ],
+        "description": "Arsia Mons volkaninin yamacinda yer alan derin yeralti lav tupu ve magara girisleri."
+    }
+}
