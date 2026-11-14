@@ -991,6 +991,62 @@
       "wind_speed_10m_ms": 4.92,
       "relative_humidity_pct": 45.6,
       "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "63.75_-83.25": {
+      "mean_surface_temp_c": -8.4,
+      "solar_irradiance_kwh_m2_day": 109.15,
+      "precipitation_mm_day": 1.22,
+      "wind_speed_10m_ms": 5.37,
+      "relative_humidity_pct": 92.5,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "71.25_-21.75": {
+      "mean_surface_temp_c": -10.7,
+      "solar_irradiance_kwh_m2_day": 105.38,
+      "precipitation_mm_day": 2.48,
+      "wind_speed_10m_ms": 5.27,
+      "relative_humidity_pct": 84.7,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "69.75_-71.75": {
+      "mean_surface_temp_c": -16.9,
+      "solar_irradiance_kwh_m2_day": 105.21,
+      "precipitation_mm_day": 0.91,
+      "wind_speed_10m_ms": 3.02,
+      "relative_humidity_pct": 92.2,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "-75.75_-120.25": {
+      "mean_surface_temp_c": -25.4,
+      "solar_irradiance_kwh_m2_day": 131.31,
+      "precipitation_mm_day": 1.86,
+      "wind_speed_10m_ms": 9.52,
+      "relative_humidity_pct": 88.5,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "-75.25_-103.75": {
+      "mean_surface_temp_c": -14.9,
+      "solar_irradiance_kwh_m2_day": 132.64,
+      "precipitation_mm_day": 2.63,
+      "wind_speed_10m_ms": 9.34,
+      "relative_humidity_pct": 89.5,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "-73.75_-88.75": {
+      "mean_surface_temp_c": -19.4,
+      "solar_irradiance_kwh_m2_day": 134.48,
+      "precipitation_mm_day": 3.71,
+      "wind_speed_10m_ms": 10.57,
+      "relative_humidity_pct": 82.7,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
+    },
+    "-70.75_-67.25": {
+      "mean_surface_temp_c": -14.3,
+      "solar_irradiance_kwh_m2_day": 140.73,
+      "precipitation_mm_day": 1.76,
+      "wind_speed_10m_ms": 6.17,
+      "relative_humidity_pct": 80.6,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)"
     }
   },
   "geocode": {
@@ -1105,6 +1161,14 @@
     "-20.25_143.75": "Queensland (Hughenden), Australia",
     "-28.25_22.75": "Northern Cape (Postmasburg), South Africa",
     "-30.75_137.25": "South Australia (Roxby Downs), Australia [Yilgarn / Gawler Craton Arid Shield]",
-    "-31.25_20.25": "Northern Cape (Calvinia), South Africa"
+    "-31.25_20.25": "Northern Cape (Calvinia), South Africa",
+    "78.25_-22.75": "Northeast Greenland Ice-Sheet & Fjord Margin, Greenland (78.25°, -22.75°)",
+    "63.75_-83.25": "Nunavut (Rankin Inlet), Canada [Canadian High-Arctic Permafrost Shield]",
+    "71.25_-21.75": "Northeast Greenland Ice-Sheet & Fjord Margin, Greenland (71.25°, -21.75°)",
+    "69.75_-71.75": "Northeast Greenland Ice-Sheet & Fjord Margin, Greenland (69.75°, -71.75°)",
+    "-75.75_-120.25": "Valparaiso (Hanga Roa), Chile",
+    "-75.25_-103.75": "Magallanes (Puerto Natales), Chile",
+    "-73.75_-88.75": "Magallanes (Punta Arenas), Chile",
+    "-70.75_-67.25": "Tierra del Fuego (Ushuaia), Argentina"
   }
 }
