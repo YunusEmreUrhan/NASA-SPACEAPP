@@ -352,6 +352,7 @@ class PlanetaryDataLoader:
 
         # Stefan-Boltzmann Gezegensel Radyatif Denge Sicakligi: T_eq = [(1-A)*S0*cos(lat) / (pi*sigma*eps)]^(1/4)
         lat_abs = abs(lat)
+        lat_norm = lat_abs / 90.0
         cos_lat = max(0.06, math.cos(math.radians(min(86.5, lat_abs))))
         sigma_sb = 5.670374419e-8
         emissivity = 0.95

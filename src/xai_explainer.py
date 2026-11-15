@@ -131,10 +131,10 @@ class PlanetaryXAIExplainer:
         t_rad = float(target.get("radiation_msv_yr", 400.0 if body == "Moon" else 220.0))
 
         climate = candidate.get("nasa_power_climate", {})
-        c_temp = float(climate.get("mean_surface_temp_c", 18.0))
-        c_precip = float(climate.get("precipitation_mm_day", 0.2))
-        c_rh = float(climate.get("relative_humidity_pct", 30.0))
-        c_solar = float(climate.get("solar_irradiance_kwh_m2_day", 5.8))
+        c_temp = float(climate.get("mean_surface_temp_c") if climate.get("mean_surface_temp_c") is not None else 18.0)
+        c_precip = float(climate.get("precipitation_mm_day") if climate.get("precipitation_mm_day") is not None else 0.2)
+        c_rh = float(climate.get("relative_humidity_pct") if climate.get("relative_humidity_pct") is not None else 30.0)
+        c_solar = float(climate.get("solar_irradiance_kwh_m2_day") if climate.get("solar_irradiance_kwh_m2_day") is not None else 5.8)
 
         dim_scores = candidate.get("dimension_matches_pct", [80.0] * 6)
         ranked_dims = sorted(

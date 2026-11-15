@@ -1,0 +1,11 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+data/raw_earth/*.jpg
+data/raw_mars/*.jpg
+data/raw_moon/*.jpg
