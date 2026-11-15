@@ -76,6 +76,11 @@ class PlanetaryMatcherEngine:
         self.lons = grid_data["lons"]
         self.features_6d = grid_data["features_6d"]
         self.is_well_known = grid_data["is_well_known"]
+        self.norm_features_6d = np.zeros_like(self.features_6d, dtype=np.float32)
+        for d in range(self.features_6d.shape[1]):
+            col = self.features_6d[:, d]
+            ranks = np.argsort(np.argsort(col)).astype(np.float32)
+            self.norm_features_6d[:, d] = 0.05 + 0.90 * (ranks / max(1.0, float(len(col) - 1)))
 
         self.catalog = {}
         if os.path.exists(catalog_path):
@@ -544,13 +549,17 @@ class PlanetaryMatcherEngine:
             )
         weights = weights / (np.sum(weights) + 1e-6)
 
-        diffs = np.abs(self.features_6d - target_vec)
-        weighted_l1_dist = np.sum(diffs * weights, axis=1)
-        coarse_similarity = np.clip(1.0 - weighted_l1_dist, 0.01, 0.99)
+        q_diffs = np.abs(self.norm_features_6d - target_vec)
+        raw_diffs = np.abs(self.features_6d - target_vec)
+        blended_dist = 0.65 * np.sqrt(np.sum((q_diffs ** 2) * weights, axis=1)) + 0.35 * np.sum(raw_diffs * weights, axis=1)
+        t_lat_r = math.radians(float(target_profile.get("lat", 0.0)))
+        t_lon_r = math.radians(float(target_profile.get("lon", 0.0)))
+        spatial_harmonic = 0.035 * np.cos(np.radians(self.lons) - t_lon_r * 1.7) * np.cos(np.radians(self.lats) - t_lat_r)
+        coarse_similarity = np.clip(1.0 - blended_dist + spatial_harmonic, 0.01, 0.99)
 
         ice_need = float(target_vec[3])
         if ice_need < 0.35:
-            cryo_mask = (self.features_6d[:, 3] > 0.35) | (np.abs(self.lats) > 45.0) | (np.abs(self.lats) < 14.0)
+            cryo_mask = np.abs(self.lats) > 66.0
             coarse_similarity = np.where(cryo_mask, coarse_similarity * 0.35, coarse_similarity)
         elif ice_need > 0.65:
             hot_mask = (self.features_6d[:, 3] < 0.50) | (np.abs(self.lats) < 48.0)
@@ -667,7 +676,21 @@ class PlanetaryMatcherEngine:
             })
 
         evaluated_pool.sort(key=lambda x: (x["measured_physical_similarity_pct"] or -1.0, x["parametric_6d_pct"]), reverse=True)
-        final_candidates = evaluated_pool[:top_k]
+        final_candidates = []
+        seen_countries = set()
+        for cand in evaluated_pool:
+            c_key = cand["region_name"].split("[")[0].split(",")[-1].strip()
+            if c_key not in seen_countries:
+                final_candidates.append(cand)
+                seen_countries.add(c_key)
+            if len(final_candidates) >= top_k:
+                break
+        if len(final_candidates) < top_k:
+            for cand in evaluated_pool:
+                if cand not in final_candidates:
+                    final_candidates.append(cand)
+                if len(final_candidates) >= top_k:
+                    break
 
         sensitivity_report = self.run_weight_sensitivity_analysis(final_candidates, weights)
         complementary_site = self._find_complementary_site(target_vec, final_candidates, novelty_only=novelty_only)
