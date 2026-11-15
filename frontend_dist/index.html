@@ -57,6 +57,305 @@
       return Number(v).toFixed(d);
     }
 
+    function fmtPct(v, d = 1, lang = "TR") {
+      const num = fmt(v, d);
+      if (num === "N/A") return "N/A";
+      return lang === "TR" ? "%" + num : num + "%";
+    }
+
+    // ============================================================================
+    // DERIN INGILIZCE CEVIRI KATMANI (ARKA UCTAN GELEN TUM TURKCE VERILER ICIN)
+    // ============================================================================
+    function trTargetName(name, lang) {
+      if (!name || lang === "TR") return name || "";
+      return String(name)
+        .replace(/Se\u00E7ili Koordinat/gi, "Selected Coordinate")
+        .replace(/Hedef Koordinat/gi, "Target Coordinate")
+        .replace(/Serbest Koordinat/gi, "Free Coordinate")
+        .replace(/\(Ay\)/gi, "(Moon)")
+        .replace(/Kal\u0131c\u0131 \u00DCs/gi, "Permanent Base");
+    }
+
+    function trGeneralTokens(str, lang) {
+      if (!str || lang === "TR") return str || "";
+      return String(str)
+        .replace(/Se\u00E7ili Koordinat/gi, "Selected Coordinate")
+        .replace(/Do\u011Frudan Uydu \u00D6l\u00E7\u00FCm\u00FC/gi, "Tier-1: Direct Satellite Measurement")
+        .replace(/Do\u011Frudan DEM \u00D6l\u00E7\u00FCm\u00FC/gi, "Tier-1: Direct DEM Measurement")
+        .replace(/Do\u011Frudan \u00D6l\u00E7\u00FCm/gi, "Direct Measurement")
+        .replace(/Fiziksel Model \/ T\u00FCretilmi\u015F/gi, "Tier-2: Physics-Derived Model")
+        .replace(/T\u00FCretilmi\u015F \u0130ndeks/gi, "Tier-2: Derived Geophysical Index")
+        .replace(/Gezegensel Sabit \/ Ba\u011Flam/gi, "Tier-3: Planetary Reference Constant")
+        .replace(/Ba\u011Flam Verisi/gi, "Context Reference")
+        .replace(/\u00D6l\u00E7\u00FClm\u00FC\u015F/gi, "Measured")
+        .replace(/Tahmini/gi, "Estimated")
+        .replace(/Y\u00FCksek Vakum/gi, "Hard Vacuum")
+        .replace(/Ultra-Y\u00FCksek Vakum/gi, "Ultra-High Vacuum")
+        .replace(/Vakum/gi, "Vacuum")
+        .replace(/Manyetosfer Korumal\u0131/gi, "Magnetosphere Shielded")
+        .replace(/Atmosfer Korumal\u0131/gi, "Atmosphere Shielded")
+        .replace(/Korumas\u0131z/gi, "Unshielded")
+        .replace(/mSv\/y\u0131l/gi, "mSv/yr")
+        .replace(/mm\/g\u00FCn/gi, "mm/day")
+        .replace(/kWh\/m\u00B2\/g\u00FCn/gi, "kWh/m\u00B2/day")
+        .replace(/g\u00FCn/gi, "day")
+        .replace(/y\u0131l/gi, "yr")
+        .replace(/Birincil/gi, "Primary")
+        .replace(/\u0130kincil/gi, "Secondary")
+        .replace(/Tamamlay\u0131c\u0131/gi, "Complementary")
+        .replace(/Yeni Ke\u015Fif/gi, "Novel Discovery")
+        .replace(/Klasik Analog/gi, "Classic Analog");
+    }
+
+    function trCriterionName(crit, lang) {
+      if (!crit || lang === "TR") return crit || "";
+      const c = String(crit);
+      const low = c.toLowerCase();
+      if (low.includes("e\u011fim") || low.includes("slope")) return "Topographic Slope (SRTM 90m vs LOLA/MOLA)";
+      if (low.includes("r\u00F6lyef") || low.includes("relief") || low.includes("engebe")) return "Vertical Relief & Surface Roughness";
+      if (low.includes("s\u0131cakl\u0131k") || low.includes("temp") || low.includes("termal")) return "Mean Surface Temperature (NASA POWER)";
+      if (low.includes("ya\u011F\u0131\u015F") || low.includes("kurakl\u0131k") || low.includes("precip") || low.includes("arid")) return "Hyper-Aridity & Daily Precipitation";
+      if (low.includes("albedo") || low.includes("bazalt") || low.includes("litoloji")) return "Basaltic Albedo & Lithology Index";
+      if (low.includes("g\u00FCne\u015F") || low.includes("solar") || low.includes("uv") || low.includes("\u0131\u015F\u0131n\u0131m")) return "Solar Irradiance & UV Flux";
+      if (low.includes("buz") || low.includes("kriyo") || low.includes("isru") || low.includes("ice")) return "Subsurface Water Ice / Cryosphere (ISRU)";
+      if (low.includes("yer\u00E7ekim") || low.includes("k\u00FCtle\u00E7ekim") || low.includes("gravity")) return "Surface Gravity Acceleration (g)";
+      if (low.includes("bas\u0131n\u00E7") || low.includes("atmosfer") || low.includes("pressure")) return "Atmospheric Surface Pressure";
+      if (low.includes("radyasyon") || low.includes("radiation") || low.includes("kozmik")) return "Ionizing Surface Radiation Dose";
+      if (low.includes("r\u00FCzgar") || low.includes("wind")) return "Near-Surface Wind Speed (10m)";
+      return trGeneralTokens(c, "EN");
+    }
+
+    function trXaiBreakdownItem(brk, targetBody, lang) {
+      if (!brk || lang === "TR") return brk;
+      const pLow = String(brk.parameter || "").toLowerCase();
+      const sLow = String(brk.severity || "").toLowerCase();
+      let severityEn = "PHYSICAL ANALOG LIMIT";
+      if (sLow.includes("kritik") || sLow.includes("critical")) severityEn = "CRITICAL PHYSICAL LIMIT (NON-SIMULATABLE ON EARTH)";
+      else if (sLow.includes("y\u00FCksek") || sLow.includes("high")) severityEn = "HIGH ENGINEERING DELTA";
+      else if (sLow.includes("orta") || sLow.includes("mod")) severityEn = "MODERATE ENVIRONMENTAL DELTA";
+      else if (sLow.includes("d\u00FC\u015F\u00FCk") || sLow.includes("low")) severityEn = "LOW TOPOGRAPHIC DELTA";
+
+      const tVal = trGeneralTokens(brk.target_value, "EN");
+      const eVal = trGeneralTokens(brk.earth_value, "EN");
+
+      if (pLow.includes("yer\u00E7ekim") || pLow.includes("k\u00FCtle\u00E7ekim") || pLow.includes("gravity") || pLow.includes("(g)")) {
+        return {
+          ...brk,
+          parameter: "Surface Gravity Acceleration (g)",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Earth\u2019s 9.81 m/s\u00B2 (1.0g) gravity increases rover wheel sinkage, soil shear strength, excavation torque, and structural settling compared to " + (targetBody === "Moon" ? "lunar 1.62 m/s\u00B2 (0.165g)" : "Martian 3.72 m/s\u00B2 (0.38g)") + " conditions.",
+          engineering_mitigation: "Use active counter-weight offloading gimbals (1/6g or 3/8g) during field mobility/drilling trials and apply Discrete Element Method (DEM) gravity-scaling laws."
+        };
+      }
+      if (pLow.includes("atmosfer") || pLow.includes("bas\u0131n\u00E7") || pLow.includes("vakum") || pLow.includes("pressure")) {
+        return {
+          ...brk,
+          parameter: "Atmospheric Pressure & Gas Composition",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Earth\u2019s dense ~101.3 kPa N\u2082/O\u2082 atmosphere introduces convective heat transfer, aerodynamic drag, and oxidative moisture absent in " + (targetBody === "Moon" ? "lunar hard vacuum (10\u207B\u00B9\u00B2 kPa)" : "Mars\u2019s thin 0.61 kPa (95% CO\u2082) atmosphere") + ".",
+          engineering_mitigation: "Follow field traverse campaigns with Dirty Thermal Vacuum (DTVAC) chamber testing to validate radiative-only cooling, outgassing, and CO\u2082/vacuum ISRU reactor kinetics."
+        };
+      }
+      if (pLow.includes("radyasyon") || pLow.includes("kozmik") || pLow.includes("manyeto") || pLow.includes("radiation")) {
+        return {
+          ...brk,
+          parameter: "Ionizing Surface Radiation (GCR & SPE)",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Earth\u2019s magnetosphere and thick atmosphere shield the surface (~2.4 mSv/yr), whereas " + targetBody + " receives unattenuated Galactic Cosmic Rays (GCR) and Solar Particle Events (SPE).",
+          engineering_mitigation: "Use the Earth analog site to validate subsurface lava-tube / regolith shielding geometry (LiDAR thickness mapping) while qualifying avionics in proton/heavy-ion beam facilities."
+        };
+      }
+      if (pLow.includes("regolit") || pLow.includes("toz") || pLow.includes("a\u015F\u0131n") || pLow.includes("dust") || pLow.includes("biyo")) {
+        return {
+          ...brk,
+          parameter: "Regolith Micro-Morphology & Electrostatic Dust",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Terrestrial sediments are rounded by aqueous/aeolian weathering and contain trace organics, whereas planetary regolith consists of jagged, unweathered, electrostatically charged silicate/oxide shards.",
+          engineering_mitigation: "Conduct rotary joint, seal, and spacesuit abrasion tests inside enclosed dust boxes using certified JSC-1A (Lunar) or MGS-1 (Martian) mineralogical simulants."
+        };
+      }
+      if (pLow.includes("termal") || pLow.includes("s\u0131cakl\u0131k") || pLow.includes("gece") || pLow.includes("thermal")) {
+        return {
+          ...brk,
+          parameter: "Diurnal Thermal Shock & Cryogenic Night",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Earth\u2019s atmosphere moderates diurnal temperature swings to ~15\u201330\u00B0C, whereas " + targetBody + " surfaces undergo extreme cryogenic night drops (-130\u00B0C to -180\u00B0C) and rapid radiative thermal gradients.",
+          engineering_mitigation: "Complement field solar/albedo power autonomy trials with liquid-nitrogen (LN\u2082) cryogenic thermal-shock cycling on batteries, seals, and structural joints."
+        };
+      }
+      if (pLow.includes("su") || pLow.includes("buz") || pLow.includes("nem") || pLow.includes("kurak") || pLow.includes("kriyo")) {
+        return {
+          ...brk,
+          parameter: "Moisture Regime & Volatile Stability",
+          severity: severityEn,
+          target_value: tVal,
+          earth_value: eVal,
+          impact: "Even hyper-arid terrestrial deserts or polar permafrost retain trace liquid brine films and atmospheric humidity, unlike desiccated vacuum-exposed planetary volatiles.",
+          engineering_mitigation: "Pre-bake drill cores and calibrate volatile extraction (ISRU) mass spectrometers under dehydrated purge gas conditions."
+        };
+      }
+      return {
+        ...brk,
+        parameter: trCriterionName(brk.parameter, "EN"),
+        severity: severityEn,
+        target_value: tVal,
+        earth_value: eVal,
+        impact: "Local kilometer-scale environmental and topographic variance between the Earth analog basin and the " + targetBody + " target requires boundary calibration during field testing.",
+        engineering_mitigation: "Constrain field validation maneuvers to the high-similarity 1.25\u00D71.25 km Micro-ROI window and apply numerical boundary scaling in mission software."
+      };
+    }
+
+    function trProcessKey(k, lang) {
+      if (!k || lang === "TR") return k || "";
+      const low = String(k).toLowerCase();
+      if (low.includes("volkan") || low.includes("bazalt") || low.includes("lav")) return "Basaltic Volcanism & Lava Tube Emplacement";
+      if (low.includes("eoliyen") || low.includes("r\u00FCzgar") || low.includes("kumul")) return "Aeolian Abrasion & Wind-Driven Dune Dynamics";
+      if (low.includes("kriyo") || low.includes("buzul") || low.includes("permafrost")) return "Cryospheric Permafrost & Freeze-Thaw Polygonation";
+      if (low.includes("kurak") || low.includes("evaporit") || low.includes("tuz")) return "Hyper-Arid Evaporitic & Salt-Flat Weathering";
+      if (low.includes("krater") || low.includes("\u00E7arpma") || low.includes("\u015Fok")) return "Impact Cratering & Shock-Metamorphic Breccia";
+      if (low.includes("fl\u00FCvyal") || low.includes("delta") || low.includes("sediman") || low.includes("g\u00F6l")) return "Fluvial-Lacustrine Paleo-Delta Sedimentation";
+      if (low.includes("yama\u00E7") || low.includes("k\u00FCtle") || low.includes("erozyon")) return "Gravitational Slope & Escarpment Mass Wasting";
+      return trGeneralTokens(k, "EN");
+    }
+
+    function buildEnglishMarkdownDossier(data) {
+      if (!data || !data.target) return "";
+      const t = data.target;
+      const cands = data.primary_candidates || [];
+      const c1 = cands[0] || {};
+      const xaiList = c1.xai_explanation?.breakdown_matrix || data.xai_primary?.breakdown_matrix || [];
+      const rmap = data.roadmap || [];
+      const lines = [
+        "# TERRA-TWIN OFFICIAL MISSION DOSSIER (NASA SPACE APPS 2026)",
+        "",
+        "## 1. TARGET PLANETARY SITE PROFILE",
+        "- **Target Body:** " + t.body,
+        "- **Target Designation:** " + t.name,
+        "- **Coordinates:** " + t.lat + "\u00B0, " + t.lon + "\u00B0",
+        "- **2D DEM Mean Slope / Relief:** " + fmt(t.cross_section?.mean_slope_deg, 2) + "\u00B0 | " + fmt(t.cross_section?.relief_m, 1) + " m",
+        "",
+        "## 2. TOP 3 DISCOVERED EARTH ANALOG SITES",
+        ...cands.map((c, idx) =>
+          "### #" + (idx + 1) + " " + c.region_name + "\n" +
+          "- **Coordinates:** " + c.lat + "\u00B0, " + c.lon + "\u00B0 (Micro-ROI: " + (c.micro_scale_pinpoint?.micro_lat ?? c.lat) + "\u00B0, " + (c.micro_scale_pinpoint?.micro_lon ?? c.lon) + "\u00B0)\n" +
+          "- **Combined Match Score:** " + fmt(c.total_match_pct ?? c.parametric_6d_pct, 1) + "% (6D Pre-Screen Rank #" + c.pre_screen_rank + " -> Final Rank #" + (idx + 1) + ")\n" +
+          "- **SRTM 90m DEM Slope & Relief:** " + fmt(c.cross_section?.mean_slope_deg, 2) + "\u00B0 | " + fmt(c.cross_section?.relief_m, 1) + " m\n" +
+          "- **NASA POWER Telemetry:** " + fmt(c.nasa_power_climate?.mean_surface_temp_c, 1) + "\u00B0C | " + fmt(c.nasa_power_climate?.precipitation_mm_day, 2) + " mm/day"
+        ),
+        "",
+        "## 3. ANALOG BREAKDOWN LIMITS (XAI) & ENGINEERING MITIGATION",
+        ...xaiList.map((b) =>
+          "- **" + b.parameter + " [" + b.severity + "]:** Target `" + b.target_value + "` vs Earth `" + b.earth_value + "`.\n" +
+          "  - *Physical Impact:* " + b.impact + "\n" +
+          "  - *Engineering Mitigation:* " + b.engineering_mitigation
+        ),
+        "",
+        "## 4. PHASED TRL 4 -> 7 FIELD VALIDATION ROADMAP",
+        ...rmap.map((r) => "- **" + r.phase + "** (" + r.assigned_sites + "): " + r.objective)
+      ];
+      return lines.join("\n");
+    }
+
+    function localizeApiData(raw, lang) {
+      if (!raw || lang === "TR") return raw;
+      const data = JSON.parse(JSON.stringify(raw));
+      const tBody = data.target?.body || "Moon";
+      if (data.target) {
+        data.target.name = trTargetName(data.target.name, "EN");
+      }
+      if (Array.isArray(data.primary_candidates)) {
+        data.primary_candidates = data.primary_candidates.map((cand, idx) => {
+          cand.strategic_role_badge = idx === 0
+            ? "Primary Topographic & Geochemical Twin (#1)"
+            : idx === 1
+              ? "Secondary Geomorphic & Thermal Analog (#2)"
+              : "Tertiary Complementary Field Basin (#3)";
+          if (Array.isArray(cand.physical_evidence_table)) {
+            cand.physical_evidence_table = cand.physical_evidence_table.map((row) => ({
+              ...row,
+              criterion: trCriterionName(row.criterion, "EN"),
+              earth_measured: trGeneralTokens(row.earth_measured, "EN"),
+              target_measured: trGeneralTokens(row.target_measured, "EN"),
+              unit: trGeneralTokens(row.unit, "EN"),
+              provenance_tier: trGeneralTokens(row.provenance_tier, "EN"),
+              source: trGeneralTokens(row.source, "EN")
+            }));
+          }
+          if (cand.process_analogy && cand.process_analogy.process_breakdown) {
+            const nextBreak = {};
+            Object.entries(cand.process_analogy.process_breakdown).forEach(([k, v]) => {
+              nextBreak[trProcessKey(k, "EN")] = v;
+            });
+            cand.process_analogy.process_breakdown = nextBreak;
+          }
+          if (cand.astrobiology_profile) {
+            const gLow = String(cand.astrobiology_profile.extremophile_guild || "").toLowerCase();
+            if (gLow.includes("kriyo") || gLow.includes("buz") || gLow.includes("kut") || cand.lat > 55 || cand.lat < -55) {
+              cand.astrobiology_profile.extremophile_guild = "Cryophilic Permafrost, Psychrophilic & Sub-Zero Brine Lithotrophs";
+            } else {
+              cand.astrobiology_profile.extremophile_guild = "Endolithic, Hyper-Arid Halophilic & UV/Radiation-Tolerant Extremophiles";
+            }
+            cand.astrobiology_profile.astrobiology_mission_relevance =
+              "With a mean surface temperature of " + fmt(cand.nasa_power_climate?.mean_surface_temp_c, 1) +
+              "\u00B0C, hyper-arid precipitation of " + fmt(cand.nasa_power_climate?.precipitation_mm_day, 2) +
+              " mm/day, and solar flux of " + fmt(cand.astrobiology_profile.solar_irradiance_kwh_m2_day, 2) +
+              " kWh/m\u00B2/day, this basin serves as a high-fidelity testbed for subsurface biosignature preservation, Raman/LIBS life-detection spectrometers, and planetary protection sterilization protocols.";
+          }
+          if (cand.xai_explanation && Array.isArray(cand.xai_explanation.breakdown_matrix)) {
+            cand.xai_explanation.breakdown_matrix = cand.xai_explanation.breakdown_matrix.map((b) =>
+              trXaiBreakdownItem(b, tBody, "EN")
+            );
+          }
+          return cand;
+        });
+      }
+      if (data.xai_primary && Array.isArray(data.xai_primary.breakdown_matrix)) {
+        data.xai_primary.breakdown_matrix = data.xai_primary.breakdown_matrix.map((b) =>
+          trXaiBreakdownItem(b, tBody, "EN")
+        );
+      }
+      if (data.complementary_split_site) {
+        data.complementary_split_site.weakest_dimension_name = trCriterionName(
+          data.complementary_split_site.weakest_dimension_name,
+          "EN"
+        );
+      }
+      if (Array.isArray(data.roadmap)) {
+        const c0 = data.primary_candidates?.[0]?.region_name?.split("[")[0]?.trim() || "Primary Analog Basin";
+        const c1 = data.primary_candidates?.[1]?.region_name?.split("[")[0]?.trim() || c0;
+        const compName = data.complementary_split_site?.complementary_region_name?.split("[")[0]?.trim() || c1;
+        data.roadmap = [
+          {
+            phase: "Phase 1 (TRL 4 -> 5): Sensor, Spectrometer & Geochemical Calibration",
+            assigned_sites: c0,
+            objective: "Calibrate Raman/LIBS mineralogy spectrometers, ground-penetrating radar (GPR), and optical navigation filters on bare basaltic/evaporitic outcrops."
+          },
+          {
+            phase: "Phase 2 (TRL 5 -> 6): Rover Traverse, Excavation & Subsurface Habitat Trials",
+            assigned_sites: c0 + " + " + compName,
+            objective: "Execute autonomous multi-kilometer rover path-planning inside the 1.25x1.25 km low-slope Micro-ROI window and test ISRU drilling / habitat deployment."
+          },
+          {
+            phase: "Phase 3 (TRL 6 -> 7): Integrated Human-Robotic EVA & DTVAC Qualification",
+            assigned_sites: c0 + " & Environmental Chamber",
+            objective: "Perform full-dress astronaut EVA communication latency simulations followed by Dirty Thermal Vacuum (DTVAC) and 1/6g-3/8g gravity-offloading verification."
+          }
+        ];
+      }
+      data.markdown_dossier = buildEnglishMarkdownDossier(data);
+      return data;
+    }
+
     function geographicPosition(lat, lon, radius = 2) {
       const phi = THREE.MathUtils.degToRad(90 - lat);
       const theta = THREE.MathUtils.degToRad(lon + 180);
@@ -101,22 +400,32 @@
         try {
           renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
         } catch (err) { return; }
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+        const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
         const initPos = geographicPosition(centerLat || 15, centerLon || 20, 5.8);
         camera.position.copy(initPos);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
-        controls.minDistance = 2.5;
+        controls.minDistance = 2.15;
         controls.maxDistance = 12;
 
         scene.add(new THREE.AmbientLight(0xcbd5e1, 2.15));
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for (let i = 0; i < 500; i++) {
+          const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(15 + Math.random() * 25);
+          starPos.push(v.x, v.y, v.z);
+        }
+        starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.04, sizeAttenuation: true, transparent: true, opacity: 0.85 });
+        scene.add(new THREE.Points(starGeo, starMat));
+
         const sun = new THREE.DirectionalLight(0xffffff, 2.8);
         sun.position.set(-4, 6, 8);
         scene.add(sun);
@@ -133,7 +442,10 @@
           if (disposed) { t.dispose(); return; }
           loadedTex = t;
           t.colorSpace = THREE.SRGBColorSpace;
-          t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          t.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy());
+          t.minFilter = THREE.LinearMipmapLinearFilter;
+          t.magFilter = THREE.LinearFilter;
+          t.generateMipmaps = true;
           mat.map = latest.current.imagery ? t : null;
           mat.color.set(0xffffff);
           mat.needsUpdate = true;
@@ -165,7 +477,7 @@
             controls.target.set(0, 0, 0);
             controls.update();
           },
-          zoom: (f) => { camera.position.multiplyScalar(f).clampLength(2.6, 12); controls.update(); },
+          zoom: (f) => { camera.position.multiplyScalar(f).clampLength(2.15, 12); controls.update(); },
           reset: () => { camera.position.copy(initPos); controls.target.set(0, 0, 0); controls.update(); }
         };
 
@@ -212,6 +524,7 @@
         let frameId = 0;
         const animate = () => {
           if (disposed) return;
+          if (document.hidden) { frameId = requestAnimationFrame(animate); return; }
           controls.update();
           lines.visible = latest.current.grid;
           markerGroup.visible = latest.current.markers;
@@ -219,6 +532,20 @@
             mat.map = latest.current.imagery ? loadedTex : null;
             mat.needsUpdate = true;
           }
+          const camDist = camera.position.length();
+          const altitude = Math.max(0.01, camDist - 2.0);
+          controls.rotateSpeed = Math.max(0.18, Math.min(0.85, altitude / 2.6));
+          const pinScale = Math.max(0.18, Math.min(1.15, Math.pow(altitude / 2.6, 0.82)));
+          const pinOpacity = Math.max(0.02, Math.min(0.95, (altitude - 0.05) / 1.65));
+          markerGroup.children.forEach((obj) => {
+            if (obj.isMesh) {
+              obj.scale.setScalar(pinScale);
+              if (obj.material) {
+                obj.material.transparent = true;
+                obj.material.opacity = obj.userData.isRing ? pinOpacity * 0.82 : pinOpacity;
+              }
+            }
+          });
           const camDir = camera.position.clone().normalize();
           const lbls = sceneObjsRef.current ? sceneObjsRef.current.labelElements : [];
           lbls.forEach(({ el, pos, id }) => {
@@ -228,6 +555,10 @@
               const p = pos.clone().project(camera);
               el.style.left = ((p.x * 0.5 + 0.5) * container.clientWidth) + "px";
               el.style.top = ((-p.y * 0.5 + 0.5) * container.clientHeight) + "px";
+              const textScale = Math.max(0.68, Math.min(1.0, 0.64 + altitude * 0.14));
+              const textOpacity = Math.max(0.05, Math.min(1.0, (altitude - 0.02) / 1.4));
+              el.style.opacity = String(textOpacity);
+              el.style.transform = "translate(10px, -50%) scale(" + textScale.toFixed(2) + ")";
               el.classList.toggle("selected", id === latest.current.selectedId);
             }
           });
@@ -261,7 +592,7 @@
 
         (customMarkers || []).forEach((item) => {
           const col = item.colorHex || 0x38bdf8;
-          const mMat = new THREE.MeshBasicMaterial({ color: col });
+          const mMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.95, depthWrite: false });
           const rMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
           const pos = geographicPosition(item.lat, item.lon, 2.028);
           const mesh = new THREE.Mesh(markerGeo, mMat);
@@ -273,6 +604,7 @@
           const ring = new THREE.Mesh(ringGeo, rMat);
           ring.position.copy(pos.clone().multiplyScalar(1.002));
           ring.lookAt(pos.clone().multiplyScalar(2));
+          ring.userData.isRing = true;
           markerGroup.add(ring);
 
           const el = document.createElement("button");
@@ -282,18 +614,6 @@
           container.appendChild(el);
           ctx.labelElements.push({ el, pos, id: item.id });
         });
-
-        if (body === "Earth" && splitBridgeCoords) {
-          const pStart = geographicPosition(splitBridgeCoords.fromLat, splitBridgeCoords.fromLon, 2.02);
-          const pEnd = geographicPosition(splitBridgeCoords.toLat, splitBridgeCoords.toLon, 2.02);
-          const arcPts = [];
-          for (let i = 0; i <= 48; i++) {
-            const t = i / 48;
-            const interp = new THREE.Vector3().lerpVectors(pStart, pEnd, t).normalize();
-            arcPts.push(interp.multiplyScalar(2.02 + Math.sin(t * Math.PI) * 0.14));
-          }
-          markerGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPts), new THREE.LineBasicMaterial({ color: 0x38bdf8 })));
-        }
       }, [body, customMarkers, splitBridgeCoords]);
 
       useEffect(() => {
@@ -356,7 +676,7 @@
           compSite?.features_6d && h("polygon", { points: poly(compSite.features_6d), fill: "none", stroke: "#818cf8", strokeWidth: 1.8, strokeDasharray: "4 3" })
         ),
         h("div", { style: { display: "flex", gap: 12, justifyContent: "center", fontSize: 11, flexWrap: "wrap" } },
-          h("span", { style: { color: "#38bdf8" } }, "\u25CF " + (targetName || "").slice(0, 24)),
+          h("span", { style: { color: "#38bdf8" } }, "\u25CF " + (targetName || "").slice(0, 28)),
           candidates[0] && h("span", { style: { color: "#f59e0b" } }, "\u25CF #1: " + candidates[0].region_name.split("[")[0].trim()),
           compSite && h("span", { style: { color: "#818cf8" } }, "\u2508 Split-Site: " + compSite.complementary_region_name.split("[")[0].trim())
         )
@@ -404,11 +724,8 @@
       const [lang, setLang] = useState("TR");
       const tr = (en, tu) => (lang === "TR" ? tu : en);
 
-      // 1. FOTO?RAF: A?ILIR KAPANIR SOL PANEL & SMOOTH SCROLL REFERANSI
       const [sidebarOpen, setSidebarOpen] = useState(true);
       const tabsSectionRef = useRef(null);
-
-      // 2. FOTO?RAF: SADE KONTROL EKRANI (GEL??M?? AYARLAR A?ILIR KAPANIR)
       const [showAdvanced, setShowAdvanced] = useState(false);
 
       const [body, setBody] = useState("Earth");
@@ -428,7 +745,7 @@
       const [noveltyOnly, setNoveltyOnly] = useState(true);
       const [minSepKm, setMinSepKm] = useState(450);
 
-      const [apiData, setApiData] = useState(null);
+      const [rawApiData, setRawApiData] = useState(null);
       const [loading, setLoading] = useState(false);
       const [selectedCandIdx, setSelectedCandIdx] = useState(0);
       const [showHud, setShowHud] = useState(true);
@@ -436,6 +753,10 @@
       const [modal, setModal] = useState(null);
       const [saved, setSaved] = useState([]);
       const [toastMsg, setToastMsg] = useState("");
+      const [zoomImgUrl, setZoomImgUrl] = useState(null);
+
+      // AKTIF DILE GORE TUM API VERISINI ANINDA CEVIREN MEMO
+      const apiData = useMemo(() => localizeApiData(rawApiData, lang), [rawApiData, lang]);
 
       function selectTabAndScroll(tabId) {
         setActiveTab(tabId);
@@ -477,7 +798,7 @@
           });
           const d = await r.json();
           if (d && d.status === "ok") {
-            setApiData(d);
+            setRawApiData(d);
             setSelectedCandIdx(0);
           }
         } catch (e) {
@@ -495,7 +816,6 @@
       const candidates = apiData?.primary_candidates || [];
       const activeCand = candidates[selectedCandIdx] || candidates[0] || null;
       const compSite = apiData?.complementary_split_site || null;
-      const baseFeas = targetProfile?.base_feasibility || null;
       const shortlistPool = apiData?.shortlist_full_pool || [];
       const xaiData = activeCand?.xai_explanation || apiData?.xai_primary || null;
       const roadmap = apiData?.roadmap || [];
@@ -503,8 +823,6 @@
 
       const activeTargetBody = (!split && (body === "Moon" || body === "Mars")) ? body : (targetProfile?.body || dynBody || "Moon");
 
-      // 3. FOTO?RAF ??Z?M?: D?NYA K?RES?NDE YALNIZCA AKT?F KE?FED?LEN ADAYLAR G?R?N?R,
-      // AY VE MARS K?RES?NDE ?SE "PRESET" (NASA ?S KATALO?U) SE??LMED?K?E GARANT? NOKTALAR G?ZLEN?R!
       const earthMarkers = useMemo(() => {
         const cols = [0x38bdf8, 0xf59e0b, 0x818cf8];
         return candidates.map((c, i) => ({
@@ -512,10 +830,10 @@
           name: c.region_name.split("[")[0].trim(),
           lat: c.lat,
           lon: c.lon,
-          badge: "#" + (i + 1) + " (%" + fmt(c.total_match_pct ?? c.parametric_6d_pct, 1) + ")",
+          badge: "#" + (i + 1) + " (" + fmtPct(c.total_match_pct ?? c.parametric_6d_pct, 1, lang) + ")",
           colorHex: cols[i] || 0x38bdf8
         }));
-      }, [candidates]);
+      }, [candidates, lang]);
 
       const targetMarkers = useMemo(() => {
         if (selectionMode === "PRESET") {
@@ -544,7 +862,7 @@
           setDynBody(clickedBody);
           setDynLat(lat);
           setDynLon(lon);
-          setToastMsg(tr("Selected " + clickedBody + " (" + lat + "\u00B0, " + lon + "\u00B0)", "\uD83C\uDFAF " + clickedBody + " (" + lat + "\u00B0, " + lon + "\u00B0) analiz edildi!"));
+          setToastMsg(tr("\uD83C\uDFAF Selected " + clickedBody + " (" + lat + "\u00B0, " + lon + "\u00B0)", "\uD83C\uDFAF " + clickedBody + " (" + lat + "\u00B0, " + lon + "\u00B0) analiz edildi!"));
         } else if (clickedBody === "Earth" && candidates.length > 0) {
           let bestIdx = 0, bestD = 1e9;
           candidates.forEach((c, i) => {
@@ -618,7 +936,7 @@
             loading ? tr("ANALYZING...", "ANAL\u0130Z ED\u0130L\u0130YOR...") : tr("11,469 GLOBAL CELLS ACTIVE", "11.469 K\u00DCRESEL H\u00DCCRE AKT\u0130F")
           ),
           h("div", { className: "top-actions" },
-            h("button", { className: "language-btn", onClick: () => setLang((l) => (l === "TR" ? "EN" : "TR")) }, "\uD83C\uDF10 " + (lang === "TR" ? "TR \u00B7 EN" : "EN \u00B7 TR")),
+            h("button", { className: "language-btn", onClick: () => setLang((l) => (l === "TR" ? "EN" : "TR")) }, "\uD83C\uDF10 " + (lang === "TR" ? "TR \u25B8 EN" : "EN \u25B8 TR")),
             saved.length > 0 && h("button", { className: "icon-btn", onClick: () => setModal("saved") }, "\uD83D\uDD16 " + saved.length),
             h("button", { className: "icon-btn", onClick: () => setModal("method"), title: tr("Methodology", "Bilimsel Metodoloji") }, "?"),
             h("button", { className: "demo-button", onClick: () => selectTabAndScroll(5) }, "\u2B07 " + tr("Export Dossier", "G\u00F6rev Dosyas\u0131 \u0130ndir"))
@@ -626,7 +944,7 @@
         ),
 
         h("div", { className: "app-body" },
-          // 1. FOTO?RAF: A?ILIR/KAPANIR SOL PANEL VE TIKLAYINCA A?A?I KAYDIRAN 1-5 SEKMELER?
+          // COLLAPSIBLE SIDEBAR
           h("aside", { className: "sidebar" + (sidebarOpen ? "" : " collapsed") },
             h("div", { className: "workspace-name" },
               h("div", { className: "workspace-title-group" },
@@ -698,7 +1016,7 @@
               )
             ),
 
-            // 2. FOTO?RAF ??Z?M?: SADE, KULLANICI DOSTU SE??M EKRANI
+            // CLEAN & SIMPLE CONTROL PANEL
             h("section", { className: "tt-control-panel" },
               h("div", { className: "tt-simple-bar" },
                 h("div", { className: "tt-field" },
@@ -726,7 +1044,7 @@
                       h("div", { className: "tt-field" },
                         h("label", null, tr("BODY", "G\u00D6K C\u0130SM\u0130")),
                         h("select", { value: dynBody, onChange: (e) => setDynBody(e.target.value) },
-                          h("option", { value: "Moon" }, "Moon (Ay)"),
+                          h("option", { value: "Moon" }, tr("Moon", "Moon (Ay)")),
                           h("option", { value: "Mars" }, "Mars")
                         )
                       ),
@@ -812,7 +1130,7 @@
                   h("div", { className: "tt-weight-item", key: lbl },
                     h("div", { style: { display: "flex", justifyContent: "space-between", color: "#e2e8f0" } },
                       h("span", null, lbl),
-                      h("b", { style: { color: "#38bdf8" } }, "%" + Math.round(customWeights[idx] * 100))
+                      h("b", { style: { color: "#38bdf8" } }, fmtPct(customWeights[idx] * 100, 0, lang))
                     ),
                     h("input", {
                       type: "range", min: "0", max: "1", step: "0.05",
@@ -839,17 +1157,17 @@
               h("div", { className: "tt-metric-card" },
                 h("small", null, "\uD83E\uDD47 #" + (selectedCandIdx + 1) + " " + tr("DISCOVERED EARTH ANALOG", "KE\u015EFED\u0130LEN D\u00DCNYA ANALOGU")),
                 h("strong", null, activeCand.region_name.split("[")[0].trim()),
-                h("span", { style: { color: "#f59e0b" } }, "%" + fmt(activeScoreVal, 1) + " " + tr("Match", "Uyum") + " (#" + activeCand.pre_screen_rank + " \u2794 #" + (selectedCandIdx + 1) + ")")
+                h("span", { style: { color: "#f59e0b" } }, fmtPct(activeScoreVal, 1, lang) + " " + tr("Match", "Uyum") + " (#" + activeCand.pre_screen_rank + " \u2794 #" + (selectedCandIdx + 1) + ")")
               ),
               h("div", { className: "tt-metric-card" },
                 h("small", null, "\u26F0\uFE0F " + tr("2D SRTM 90m DEM PROFILE", "2B SRTM 90m DEM KES\u0130T\u0130")),
                 h("strong", null, tr("Slope: ", "E\u011Fim: ") + fmt(activeCand.cross_section?.mean_slope_deg, 2) + "\u00B0 | " + fmt(activeCand.cross_section?.relief_m, 1) + " m"),
-                h("span", { style: { color: "#818cf8" } }, tr("Physical Similarity: ", "Fiziksel Benzerlik: ") + (activeCand.measured_physical_similarity_pct !== null ? "%" + fmt(activeCand.measured_physical_similarity_pct, 1) : "6B \u00D6n Eleme"))
+                h("span", { style: { color: "#818cf8" } }, tr("Physical Similarity: ", "Fiziksel Benzerlik: ") + (activeCand.measured_physical_similarity_pct !== null ? fmtPct(activeCand.measured_physical_similarity_pct, 1, lang) : tr("6D Pre-Screen", "6B \u00D6n Eleme")))
               ),
               h("div", { className: "tt-metric-card" },
                 h("small", null, "\uD83D\uDCE1 " + tr("LIVE NASA POWER & SI COVERAGE", "CANLI NASA POWER & SI KAPSAMI")),
-                h("strong", null, fmt(activeCand.nasa_power_climate?.mean_surface_temp_c, 1) + "\u00B0C | " + fmt(activeCand.nasa_power_climate?.precipitation_mm_day, 2) + " mm/g"),
-                h("span", { style: { color: "#34d399" } }, "%" + fmt(activeCand.data_coverage_pct, 1) + " " + tr("SI Evidence Coverage", "SI Kan\u0131t Kapsam\u0131"))
+                h("strong", null, fmt(activeCand.nasa_power_climate?.mean_surface_temp_c, 1) + "\u00B0C | " + fmt(activeCand.nasa_power_climate?.precipitation_mm_day, 2) + tr(" mm/d", " mm/g")),
+                h("span", { style: { color: "#34d399" } }, fmtPct(activeCand.data_coverage_pct, 1, lang) + " " + tr("SI Evidence Coverage", "SI Kan\u0131t Kapsam\u0131"))
               )
             ),
 
@@ -891,7 +1209,7 @@
                   )
                 ),
 
-                // 5 TABS (SMOOTH SCROLL HEDEF?)
+                // 5 TABS
                 h("div", { className: "decision-tabs-anchor", ref: tabsSectionRef },
                   h("div", { className: "section-tabs" },
                     [
@@ -914,7 +1232,7 @@
                             key: c.grid_index,
                             className: "tt-quick-btn " + (selectedCandIdx === i ? "active" : ""),
                             onClick: () => setSelectedCandIdx(i)
-                          }, "#" + (i + 1) + " " + c.region_name.split("[")[0].trim() + " (%" + fmt(c.total_match_pct ?? c.parametric_6d_pct, 1) + ") " + (c.is_novel_discovery ? "\uD83D\uDC8E" : "\uD83C\uDFDB\uFE0F"))
+                          }, "#" + (i + 1) + " " + c.region_name.split("[")[0].trim() + " (" + fmtPct(c.total_match_pct ?? c.parametric_6d_pct, 1, lang) + ") " + (c.is_novel_discovery ? "\uD83D\uDC8E" : "\uD83C\uDFDB\uFE0F"))
                         )
                       ),
                       h("label", { style: { display: "flex", gap: 7, alignItems: "center", color: "#38bdf8", fontSize: 11.5, cursor: "pointer" } },
@@ -925,14 +1243,14 @@
                     h("div", { className: "tt-hud-grid" },
                       h("div", { className: "tt-hud-box" },
                         h("b", { style: { color: "#38bdf8", display: "block", marginBottom: 6 } }, tr("TARGET: ", "HEDEF: ") + targetProfile.name),
-                        h("img", { src: showHud ? targetProfile.hud_data_url : targetProfile.rgb_data_url }),
+                        h("img", { src: showHud ? targetProfile.hud_data_url : targetProfile.rgb_data_url, title: tr("Click to enlarge HD view", "Tam ekran HD g\u00F6r\u00FCnt\u00FC i\u00E7in t\u0131klay\u0131n"), onClick: () => setZoomImgUrl(showHud ? targetProfile.hud_data_url : targetProfile.rgb_data_url) }),
                         h("div", { style: { marginTop: 8, fontSize: 11, color: "#94a3b8" } },
                           "\u2022 " + (targetProfile.physical_measurements?.measurement_source || "NASA") + " | " + tr("Slope: ", "E\u011Fim: ") + fmt(targetProfile.cross_section?.mean_slope_deg, 2) + "\u00B0 | " + tr("Relief: ", "R\u00F6lyef: ") + fmt(targetProfile.cross_section?.relief_m, 1) + " m"
                         )
                       ),
                       h("div", { className: "tt-hud-box" },
                         h("b", { style: { color: "#f59e0b", display: "block", marginBottom: 6 } }, "#" + (selectedCandIdx + 1) + " ANALOG: " + activeCand.region_name),
-                        h("img", { src: showHud ? activeCand.hud_data_url : activeCand.rgb_data_url }),
+                        h("img", { src: showHud ? activeCand.hud_data_url : activeCand.rgb_data_url, title: tr("Click to enlarge HD view", "Tam ekran HD g\u00F6r\u00FCnt\u00FC i\u00E7in t\u0131klay\u0131n"), onClick: () => setZoomImgUrl(showHud ? activeCand.hud_data_url : activeCand.rgb_data_url) }),
                         h("div", { style: { marginTop: 8, fontSize: 11, color: "#94a3b8" } },
                           "\u2022 \uD83C\uDFAF Micro-ROI (" + activeCand.micro_scale_pinpoint?.patch_scale_km + "): " + activeCand.micro_scale_pinpoint?.micro_lat + "\u00B0, " + activeCand.micro_scale_pinpoint?.micro_lon + "\u00B0 | NASA POWER: " + fmt(activeCand.nasa_power_climate?.mean_surface_temp_c, 1) + "\u00B0C"
                         )
@@ -942,7 +1260,7 @@
                       h("table", { className: "evidence-table" },
                         h("thead", null, h("tr", null,
                           h("th", null, tr("Final Rank", "Final S\u0131ra")), h("th", null, tr("Stage-1 Rank", "6B \u00D6n Eleme")), h("th", null, tr("Discovered Earth Basin [Geological Belt]", "Ke\u015Ffedilen D\u00FCnya B\u00F6lgesi [Jeolojik Ku\u015Fak]")),
-                          h("th", null, tr("Coordinates", "Koordinat")), h("th", null, tr("2D DEM Match", "2B DEM Kesiti")), h("th", null, tr("Coverage", "SI Kapsam\u0131")), h("th", null, tr("Combined Score", "Birle\u015Fik Skor"))
+                          h("th", null, tr("Coordinates", "Koordinat")), h("th", null, tr("2D DEM Match", "2B DEM Kesiti")), h("th", null, tr("SI Coverage", "SI Kapsam\u0131")), h("th", null, tr("Combined Score", "Birle\u015Fik Skor"))
                         )),
                         h("tbody", null,
                           shortlistPool.map((item, idx) =>
@@ -951,9 +1269,9 @@
                               h("td", null, "#" + item.pre_rank),
                               h("td", null, item.region_name),
                               h("td", null, item.lat + "\u00B0, " + item.lon + "\u00B0"),
-                              h("td", null, "%" + fmt(item.topographic_match_pct, 1)),
-                              h("td", null, "%" + fmt(item.data_coverage_pct ?? 100, 1)),
-                              h("td", null, h("b", { style: { color: "#38bdf8" } }, "%" + fmt(item.final_score_pct, 1)))
+                              h("td", null, fmtPct(item.topographic_match_pct, 1, lang)),
+                              h("td", null, fmtPct(item.data_coverage_pct ?? 100, 1, lang)),
+                              h("td", null, h("b", { style: { color: "#38bdf8" } }, fmtPct(item.final_score_pct, 1, lang)))
                             )
                           )
                         )
@@ -977,7 +1295,7 @@
                       h("table", { className: "evidence-table" },
                         h("thead", null, h("tr", null,
                           h("th", null, tr("Physical Criterion", "Fiziksel \u00D6l\u00E7\u00FCt")), h("th", null, tr("Earth Measurement (\u00B1Unc)", "D\u00FCnya \u00D6l\u00E7\u00FCm\u00FC (\u00B1Hata)")), h("th", null, targetProfile.body + " (\u00B1Unc)"),
-                          h("th", null, tr("SI Unit", "SI Birimi")), h("th", null, tr("Similarity", "Benzerlik")), h("th", null, tr("Provenance", "Kan\u0131t Seviyesi")), h("th", null, tr("Source", "Sens\u00F6r Kayna\u011F\u0131"))
+                          h("th", null, tr("SI Unit", "SI Birimi")), h("th", null, tr("Similarity", "Benzerlik")), h("th", null, tr("Provenance Tier", "Kan\u0131t Seviyesi")), h("th", null, tr("Sensor Source", "Sens\u00F6r Kayna\u011F\u0131"))
                         )),
                         h("tbody", null,
                           (activeCand.physical_evidence_table || []).map((r) =>
@@ -986,7 +1304,7 @@
                               h("td", null, r.earth_measured),
                               h("td", null, r.target_measured),
                               h("td", null, r.unit),
-                              h("td", null, r.similarity_pct !== null ? h("b", { style: { color: "#38bdf8" } }, "%" + r.similarity_pct) : tr("Context Only", "Ba\u011Flam Verisi")),
+                              h("td", null, r.similarity_pct !== null ? h("b", { style: { color: "#38bdf8" } }, fmtPct(r.similarity_pct, 1, lang)) : tr("Context Only", "Ba\u011Flam Verisi")),
                               h("td", null, r.provenance_tier),
                               h("td", null, r.source)
                             )
@@ -1007,8 +1325,8 @@
                           ),
                           h("h3", { style: { fontSize: 14, color: "#fff" } }, cand.region_name),
                           h("p", { style: { fontSize: 11.5, color: "#94a3b8", lineHeight: 1.7, marginTop: 8 } },
-                            "\u2022 " + tr("Match: ", "Uyum: ") + "%" + fmt(cand.total_match_pct ?? cand.parametric_6d_pct, 1), h("br"),
-                            "\u2022 6D: %" + fmt(cand.parametric_6d_pct, 1) + " | DEM: %" + fmt(cand.topographic_match_pct, 1), h("br"),
+                            "\u2022 " + tr("Match: ", "Uyum: ") + fmtPct(cand.total_match_pct ?? cand.parametric_6d_pct, 1, lang), h("br"),
+                            "\u2022 6D: " + fmtPct(cand.parametric_6d_pct, 1, lang) + " | DEM: " + fmtPct(cand.topographic_match_pct, 1, lang), h("br"),
                             "\u2022 SRTM: " + fmt(cand.cross_section?.mean_slope_deg, 2) + "\u00B0 | " + fmt(cand.cross_section?.relief_m, 1) + " m"
                           )
                         )
@@ -1023,7 +1341,7 @@
                       Object.entries(activeCand.process_analogy?.process_breakdown || {}).map(([k, v]) =>
                         h("div", { key: k, style: { marginBottom: 10 } },
                           h("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 11.5, marginBottom: 4 } },
-                            h("span", null, k), h("b", { style: { color: "#38bdf8" } }, "%" + fmt(v, 1))
+                            h("span", null, k), h("b", { style: { color: "#38bdf8" } }, fmtPct(v, 1, lang))
                           ),
                           h("div", { style: { height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden" } },
                             h("div", { style: { width: (Number(v) || 0) + "%", height: "100%", background: "linear-gradient(90deg, #38bdf8, #6366f1)" } })
@@ -1037,7 +1355,7 @@
                         h("b", null, tr("Dominant Extremophile Analog Guild:", "Bask\u0131n Ekstremofil Analog Loncas\u0131:")), h("br"), activeCand.astrobiology_profile?.extremophile_guild
                       ),
                       h("p", { style: { lineHeight: 1.75, fontSize: 12, color: "#cbd5e1" } },
-                        "\u2022 Solar / UV (NASA POWER): " + fmt(activeCand.astrobiology_profile?.solar_irradiance_kwh_m2_day, 2) + " kWh/m\u00B2/g\u00FCn", h("br"),
+                        "\u2022 Solar / UV (NASA POWER): " + fmt(activeCand.astrobiology_profile?.solar_irradiance_kwh_m2_day, 2) + tr(" kWh/m\u00B2/day", " kWh/m\u00B2/g\u00FCn"), h("br"),
                         "\u2022 " + activeCand.astrobiology_profile?.astrobiology_mission_relevance
                       )
                     )
@@ -1049,7 +1367,7 @@
                       h("div", { className: "tt-xai-card", key: brk.parameter },
                         h("b", { style: { color: "#fb7185" } }, "\uD83D\uDEA8 " + brk.parameter + " \u2014 " + brk.severity), h("br"),
                         tr("Target: ", "Hedef: ") + brk.target_value + " | " + tr("Earth: ", "D\u00FCnya: ") + brk.earth_value, h("br"),
-                        tr("Impact: ", "Fiziksel Etki: ") + brk.impact, h("br"),
+                        tr("Physical Impact: ", "Fiziksel Etki: ") + brk.impact, h("br"),
                         h("span", { style: { color: "#38bdf8" } }, "\uD83D\uDEE0\uFE0F " + tr("Engineering Mitigation: ", "M\u00FChendislik Telafi Protokol\u00FC: ") + brk.engineering_mitigation)
                       )
                     ),
@@ -1104,14 +1422,14 @@
                       h("small", null, "/ 100")
                     ),
                     h("div", { style: { fontSize: 11.5, lineHeight: 1.65 } },
-                      h("b", { style: { color: "#38bdf8" } }, tr("SI Coverage: ", "SI Kapsam\u0131: ") + "%" + fmt(activeCand.data_coverage_pct, 1)), h("br"),
+                      h("b", { style: { color: "#38bdf8" } }, tr("SI Coverage: ", "SI Kapsam\u0131: ") + fmtPct(activeCand.data_coverage_pct, 1, lang)), h("br"),
                       "SRTM " + tr("Slope: ", "E\u011Fim: ") + fmt(activeCand.cross_section?.mean_slope_deg, 2) + "\u00B0", h("br"),
                       "NASA POWER: " + fmt(activeCand.nasa_power_climate?.mean_surface_temp_c, 1) + "\u00B0C"
                     )
                   ),
                   compSite && h("div", { className: "tt-split-box" },
                     h("b", { style: { color: "#38bdf8", display: "block", marginBottom: 4 } }, "\uD83E\uDDE9 " + tr("COMPLEMENTARY SPLIT-SITE", "TAMAMLAYICI 2. SAHA")),
-                    compSite.weakest_dimension_name + " \u2794 " + compSite.complementary_region_name.split("[")[0].trim() + " (%" + fmt(compSite.complementary_dim_match_pct, 1) + ")"
+                    compSite.weakest_dimension_name + " \u2794 " + compSite.complementary_region_name.split("[")[0].trim() + " (" + fmtPct(compSite.complementary_dim_match_pct, 1, lang) + ")"
                   ),
                   h("div", { style: { display: "flex", gap: 8 } },
                     h("button", {
@@ -1129,6 +1447,16 @@
           )
         ),
 
+        zoomImgUrl && h("div", { className: "modal-backdrop", onClick: () => setZoomImgUrl(null) },
+          h("div", { style: { maxWidth: 1120, width: "95%", background: "#090d18", border: "1px solid #38bdf8", borderRadius: 12, padding: 14, boxShadow: "0 20px 60px rgba(0,0,0,0.85)" } },
+            h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
+              h("b", { style: { color: "#38bdf8", fontFamily: "var(--font-mono)" } }, "\uD83D\uDD0D " + tr("FULL-HD (800\u00D7450) SATELLITE & HUD TELEMETRY INSPECTOR", "TAM EKRAN HD (800\u00D7450) UYDU & HUD TELEMETR\u0130 \u0130NCELEY\u0130C\u0130S\u0130")),
+              h("button", { className: "icon-btn", onClick: () => setZoomImgUrl(null) }, "\u2715")
+            ),
+            h("img", { src: zoomImgUrl, style: { width: "100%", borderRadius: 8, display: "block" } })
+          )
+        ),
+
         // MODAL
         modal && h("div", { className: "modal-backdrop", onClick: (e) => e.target === e.currentTarget && setModal(null) },
           h("div", { className: "modal-box" },
@@ -1137,7 +1465,7 @@
               h("button", { className: "icon-btn", onClick: () => setModal(null) }, "\u2715")
             ),
             modal === "saved"
-              ? h("div", null, saved.map((s, idx) => h("div", { key: idx, style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(148,163,184,0.15)" } }, h("span", null, s.title + " (%" + fmt(s.score, 1) + ")"), h("button", { className: "tt-quick-btn", onClick: () => { setSelectionMode("PRESET"); setPresetId(s.presetId); setMissionMode(s.mode); setModal(null); } }, tr("Load", "Y\u00FCkle")))))
+              ? h("div", null, saved.map((s, idx) => h("div", { key: idx, style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(148,163,184,0.15)" } }, h("span", null, trTargetName(s.title, lang) + " (" + fmtPct(s.score, 1, lang) + ")"), h("button", { className: "tt-quick-btn", onClick: () => { setSelectionMode("PRESET"); setPresetId(s.presetId); setMissionMode(s.mode); setModal(null); } }, tr("Load", "Y\u00FCkle")))))
               : h("div", { style: { lineHeight: 1.75, color: "#cbd5e1", fontSize: 12.5 } },
                   h("p", { style: { marginBottom: 10 } }, tr("1. Stage 1 (Global 11,469 Bare-Earth Cell Screening): Oceans and dense vegetation are masked from NASA GIBS layers. Haversine Non-Maximum Suppression (NMS) selects 8 independent geological basins.", "1. Kademe 1 (11.469 K\u00FCresel Kara H\u00FCcresi Taramas\u0131): NASA GIBS katmanlar\u0131ndan okyanuslar ve bitki \u00F6rt\u00FCs\u00FC elenerek 11.469 \u00E7\u0131plak kaya, hiper-kurak ve kriyosferik h\u00FCcre indekslenir. Haversine NMS ile birbirinden ba\u011F\u0131ms\u0131z en iyi 8 jeolojik havza se\u00E7ilir.")),
                   h("p", null, tr("2. Stage 2 (SRTM 90m DEM & NASA POWER Re-Ranking): Top 8 basins are evaluated with orthometric elevation profiles (Copernicus GLO-90 / NASA SRTM 90m DEM), NASA Langley POWER meteorology, and LRO LOLA / MGS MOLA records.", "2. Kademe 2 (SRTM 90m DEM & NASA POWER Kar\u015F\u0131la\u015Ft\u0131rmas\u0131): 8 aday havza i\u00E7in Copernicus GLO-90 / NASA SRTM 90m DEM servisinden ger\u00E7ek metrik kesit, NASA Langley POWER uydusundan iklim verileri ve LRO LOLA / MGS MOLA kay\u0131tlar\u0131 kar\u015F\u0131la\u015Ft\u0131r\u0131l\u0131r."))
