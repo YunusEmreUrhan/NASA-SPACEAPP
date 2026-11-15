@@ -27,7 +27,7 @@ COUNTRY_NAMES = {
     "UZ": "Uzbekistan", "TM": "Turkmenistan", "KG": "Kyrgyzstan", "TJ": "Tajikistan",
     "AU": "Australia", "NA": "Namibia", "ZA": "South Africa", "BW": "Botswana",
     "ET": "Ethiopia", "ER": "Eritrea", "DJ": "Djibouti", "KE": "Kenya", "SO": "Somalia",
-    "AR": "Argentina", "CL": "Chile", "PE": "Peru", "MX": "Mexico", "US": "United States",
+    "AR": "Argentina", "BR": "Brazil", "CL": "Chile", "PE": "Peru", "MX": "Mexico", "US": "United States",
     "CA": "Canada", "GL": "Greenland", "NO": "Norway", "IS": "Iceland",
     "FO": "Faroe Islands", "SJ": "Svalbard, Norway",
     "RU": "Russia", "IN": "India", "ES": "Spain", "IT": "Italy"
@@ -516,7 +516,8 @@ class PlanetaryDataLoader:
                 return None if v < -900.0 else round(v, 2)
 
             ts = _read_valid(p["TS"]["ANN"])
-            sw = _read_valid(p["ALLSKY_SFC_SW_DWN"]["ANN"])
+            sw_raw = _read_valid(p["ALLSKY_SFC_SW_DWN"]["ANN"])
+            sw = round(sw_raw * 0.024, 2) if (sw_raw is not None and sw_raw > 24.0) else sw_raw
             pr = _read_valid(p["PRECTOTCORR"]["ANN"])
             ws = _read_valid(p["WS10M"]["ANN"])
             rh = _read_valid(p["RH2M"]["ANN"])
