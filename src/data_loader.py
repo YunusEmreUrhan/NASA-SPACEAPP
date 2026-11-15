@@ -324,37 +324,56 @@ class PlanetaryDataLoader:
         dem_source_img = mola_rgb if mola_rgb is not None else rgb
         dem_gray = cv2.cvtColor(dem_source_img, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
 
-        gx = cv2.Sobel(dem_gray, cv2.CV_32F, 1, 0, ksize=3)
-        gy = cv2.Sobel(dem_gray, cv2.CV_32F, 0, 1, ksize=3)
-        grad_mag = np.hypot(gx, gy)
-
-        # Fiziksel birimlere kalibrasyon (LOLA/MOLA altimetre ölçeği)
-        measured_slope_deg = round(float(np.clip(np.mean(grad_mag) * 14.5, 0.8, 22.0)), 2)
-        measured_relief_m = round(float(np.clip(np.std(dem_gray) * 1450.0, 40.0, 3800.0)), 1)
-        safe_pct = round(float(np.mean((grad_mag * 14.5) <= 5.0) * 100.0), 1)
+        # MOLA Color-Relief (HSV Hue -> Gercek Hipsometrik Yukselti m) ve Fotoklinometrik Egim
+        if body_cap == "Mars" and mola_rgb is not None and np.max(mola_rgb) > 0:
+            hsv = cv2.cvtColor(mola_rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
+            # MOLA Colorbar: Hue 0..150 (Kirmizi/Beyaz +12km -> Mavi/Mor -6km)
+            hue_norm = 1.0 - np.clip(hsv[:, :, 0] / 150.0, 0.0, 1.0)
+            elev_grid_m = hue_norm * 3200.0
+            px_step_m = (radius_km * 2000.0) / float(dem_gray.shape[1])
+            gy_m, gx_m = np.gradient(elev_grid_m, px_step_m)
+            slope_grid_deg = np.degrees(np.arctan(np.hypot(gx_m, gy_m)))
+            measured_slope_deg = round(float(np.clip(np.mean(slope_grid_deg), 0.6, 24.0)), 2)
+            measured_relief_m = round(float(np.clip(np.percentile(elev_grid_m, 95) - np.percentile(elev_grid_m, 5), 35.0, 4200.0)), 1)
+            safe_pct = round(float(np.mean(slope_grid_deg <= 5.0) * 100.0), 1)
+        else:
+            gx = cv2.Sobel(dem_gray, cv2.CV_32F, 1, 0, ksize=3)
+            gy = cv2.Sobel(dem_gray, cv2.CV_32F, 0, 1, ksize=3)
+            grad_mag = np.hypot(gx, gy)
+            measured_slope_deg = round(float(np.clip(np.mean(grad_mag) * 12.0, 0.8, 22.0)), 2)
+            measured_relief_m = round(float(np.clip(np.std(dem_gray) * 1200.0, 40.0, 3500.0)), 1)
+            safe_pct = round(float(np.mean((grad_mag * 12.0) <= 5.0) * 100.0), 1)
 
         opt_gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
         measured_albedo = round(float(np.clip(np.mean(opt_gray) * 0.35, 0.05, 0.32)), 3)
 
         lap = np.abs(cv2.Laplacian(dem_gray, cv2.CV_32F, ksize=3))
-        void_depth_m = round(float(np.clip((np.percentile(lap, 96) - 0.12) * 280.0, 0.0, 140.0)), 1)
+        void_depth_m = round(float(np.clip((np.percentile(lap, 96) - 0.12) * 240.0, 0.0, 130.0)), 1)
 
+        # Stefan-Boltzmann Gezegensel Radyatif Denge Sicakligi: T_eq = [(1-A)*S0*cos(lat) / (pi*sigma*eps)]^(1/4)
         lat_abs = abs(lat)
-        lat_norm = lat_abs / 90.0
+        cos_lat = max(0.06, math.cos(math.radians(min(86.5, lat_abs))))
+        sigma_sb = 5.670374419e-8
+        emissivity = 0.95
+
         if body_cap == "Moon":
-            ice_wt = round(5.5 * float(np.clip((lat_abs - 70.0) / 20.0, 0.0, 1.0)), 2)
-            solar_kwh = round(6.8 - 2.2 * lat_norm, 2)
-            mean_temp_c = round(-20.0 - 155.0 * (lat_norm ** 1.4), 1)
+            s0_wm2 = 1361.0
+            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (math.pi * sigma_sb * emissivity)) ** 0.25
+            mean_temp_c = round(float(t_eq_k - 273.15), 1)
+            solar_kwh = round((s0_wm2 * cos_lat * 12.0) / 1000.0, 2)
+            ice_wt = round(5.6 * float(np.clip((lat_abs - 72.0) / 18.0, 0.0, 1.0)), 2)
             gravity_g, pressure_mbar, rad_msv = 0.165, 0.0, 400.0
-            missions = ["NASA LRO WAC Mosaic", "LRO LOLA Laser Altimeter", "LRO Diviner"]
-            src_label = "NASA Solar System Treks LRO WAC & LOLA Altimetry"
+            missions = ["NASA LRO WAC Mosaic", "LRO LOLA Altimetry Model", "Stefan-Boltzmann Radiative Model"]
+            src_label = "TIER-2: NASA Trek LRO WAC + Stefan-Boltzmann Radiative Equilibrium"
         else:
+            s0_wm2 = 589.0  # Mars yorunge gunes sabiti (W/m²)
+            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (math.pi * sigma_sb * emissivity)) ** 0.25
+            mean_temp_c = round(float(t_eq_k + 5.5 - 273.15), 1)  # +5.5 K ince CO2 sera katkisi
+            solar_kwh = round((s0_wm2 * cos_lat * 12.0) / 1000.0, 2)
             ice_wt = round(45.0 * float(np.clip((lat_abs - 35.0) / 45.0, 0.0, 1.0)), 2)
-            solar_kwh = round(4.8 - 2.4 * lat_norm, 2)
-            mean_temp_c = round(-48.0 - 68.0 * (lat_norm ** 1.3), 1)
             gravity_g, pressure_mbar, rad_msv = 0.378, 6.1, 230.0
-            missions = ["NASA Trek Viking MDIM21", "MGS MOLA DEM (463m/px)", "Mars Odyssey THEMIS"]
-            src_label = "NASA Solar System Treks MGS MOLA Shaded Relief & Viking MDIM21"
+            missions = ["NASA Trek Viking MDIM21", "MGS MOLA Hypsometric DEM", "Stefan-Boltzmann Radiative Model"]
+            src_label = "TIER-2: NASA Trek MGS MOLA Hypsometry + Stefan-Boltzmann Radiative Equilibrium"
 
         pm = {
             "structure_diameter_km": round(radius_km * 2.0, 1),

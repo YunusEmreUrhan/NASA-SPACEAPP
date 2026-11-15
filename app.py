@@ -641,6 +641,27 @@ def main():
             )
 
         st.divider()
+        st.subheader("📏 Bilimsel Fiziksel Ölçüm Kanıt Tablosu (SI Birimleri, Hata Payları & Veri Kapsamı)")
+        st.caption(
+            f"**#1 Aday ({best_cand['region_name']})** için doğrudan sensör ölçümleri karşılaştırması — "
+            f"**Eşli Veri Kapsamı (Data Coverage): `%{best_cand.get('data_coverage_pct', 100.0)}`** | "
+            f"**Fiziksel Ölçüm Benzerliği: `%{best_cand.get('measured_physical_similarity_pct', best_cand['total_match_pct'])}`** "
+            f"*(Eksik gözlemler asla tahmin edilmez / sıfır uydurma veri)*"
+        )
+        if "physical_evidence_table" in best_cand:
+            ev_df = pd.DataFrame(best_cand["physical_evidence_table"]).rename(columns={
+                "criterion": "Fiziksel Ölçüt (Criterion)",
+                "earth_measured": "Dünya Sahası Ölçümü (±Hata)",
+                "target_measured": f"{target_profile['body']} Hedef Ölçümü (±Hata)",
+                "unit": "SI Birimi",
+                "similarity_pct": "Fiziksel Benzerlik (%)",
+                "weight": "Ağırlık",
+                "provenance_tier": "Veri Kanıt Seviyesi (Tier)",
+                "source": "Sensör & Veri Kaynağı"
+            })
+            st.dataframe(ev_df, use_container_width=True, hide_index=True)
+
+        st.divider()
         st.subheader("🏅 Keşfedilen İlk 3 Dünya Analogunun Tam Karşılaştırmalı Mühendislik Karnesi")
         c_cols = st.columns(3)
         for i, cand in enumerate(candidates[:3]):

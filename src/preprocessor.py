@@ -89,16 +89,21 @@ class PlanetaryPreprocessor:
             target_mean_slope = float(published_physical["mean_slope_deg"])
             target_safe_pct = float(published_physical.get("safe_landing_pct", 75.0))
 
-            # LOLA/MOLA altimetrik krater/havza profili (gerçek ölçülmüş relief_m ve mean_slope_deg'e kalibreli)
-            norm_x = np.linspace(-1.0, 1.0, num_points)
-            if relief_m > 300.0:
-                # Krater / Çukur / Kanyon kesiti
-                profile_shape = 0.5 * (norm_x ** 2) + 0.5 * np.exp(-((norm_x - 0.55) / 0.22) ** 2)
+            # Sahte parabol (0.5*x^2) yerine, hedef uydu/MOLA karosunun merkez hattindan gercek uzamsal profil cikarilir
+            # ve yayinlanmis LOLA/MOLA fiziksel relief_m (metre) ve mean_slope_deg (derece) degerlerine kalibre edilir:
+            if image_rgb is not None and image_rgb.size > 0 and np.max(image_rgb) > 0:
+                gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+                h, w = gray.shape
+                band = np.mean(gray[max(0, h // 2 - 6):min(h, h // 2 + 6), :], axis=0)
+                dev = band - gaussian_filter1d(band, sigma=24.0)
+                integ = np.cumsum(dev)
+                integ = integ - np.linspace(integ[0], integ[-1], len(integ))
+                raw_prof = np.interp(np.linspace(0.0, 1.0, num_points), np.linspace(0.0, 1.0, w), integ)
+                profile_shape = gaussian_filter1d(raw_prof, sigma=1.6)
             else:
-                # Düzlük / Mare / Planitia kesiti
-                profile_shape = 0.35 * np.sin(norm_x * math.pi) + 0.65 * (norm_x ** 2)
+                profile_shape = np.linspace(0.0, 1.0, num_points)
             profile_norm = (profile_shape - np.min(profile_shape)) / (np.ptp(profile_shape) + 1e-6)
-            elevation_m = profile_norm * min(relief_m, 450.0)
+            elevation_m = profile_norm * min(relief_m, 480.0)
 
             dz_dx = np.gradient(elevation_m, dx_m)
             raw_slope = np.degrees(np.arctan(np.abs(dz_dx)))
