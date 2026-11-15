@@ -1,3 +1,15 @@
+import os, sys, subprocess
+try:
+    import streamlit
+    import plotly
+    import folium
+    import streamlit_folium
+    import cv2
+    import reverse_geocoder
+except ImportError:
+    print("[KURULUM] Eksik paketler otomatik kuruluyor, l?tfen bekleyin...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.txt")])
+
 import os
 import sys
 import json

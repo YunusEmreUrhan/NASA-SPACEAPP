@@ -2,18 +2,33 @@ import os
 import sys
 import subprocess
 
-# Calisma dizinini her zaman proje kok klasorune sabitle
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ROOT_DIR)
 sys.path.insert(0, os.path.join(ROOT_DIR, "src"))
 
-# Eger global 6B matris eksikse otomatik olustur
-grid_file = os.path.join(ROOT_DIR, "data", "global_grids", "earth_6d_grid.npz")
-if not os.path.exists(grid_file):
-    print("[BILGI] K?resel 6B matris bulunamad?, src/build_planetary_data.py ?al??t?r?l?yor...")
-    subprocess.check_call([sys.executable, os.path.join("src", "build_planetary_data.py")])
+def ensure_dependencies():
+    required_modules = ["streamlit", "numpy", "pandas", "scipy", "cv2", "PIL", "requests", "reverse_geocoder", "plotly", "folium", "streamlit_folium"]
+    missing = []
+    for mod in required_modules:
+        try:
+            __import__(mod)
+        except ImportError:
+            missing.append(mod)
+    if missing:
+        print(f"[KURULUM] Eksik k?t?phaneler tespit edildi ({', '.join(missing)}). Otomatik kuruluyor...")
+        req_file = os.path.join(ROOT_DIR, "requirements.txt")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_file])
+        print("[OK] T?m k?t?phaneler ba?ar?yla kuruldu!")
+
+def ensure_data_grid():
+    grid_file = os.path.join(ROOT_DIR, "data", "global_grids", "earth_6d_grid.npz")
+    if not os.path.exists(grid_file):
+        print("[BILGI] K?resel 6B matris olu?turuluyor...")
+        subprocess.check_call([sys.executable, os.path.join("src", "build_planetary_data.py")])
 
 if __name__ == "__main__":
+    ensure_dependencies()
+    ensure_data_grid()
     if "--test" in sys.argv:
         from matcher_engine import PlanetaryMatcherEngine
         eng = PlanetaryMatcherEngine(clip_mode="off")
