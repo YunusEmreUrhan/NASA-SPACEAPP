@@ -327,14 +327,16 @@ class PlanetaryDataLoader:
         # MOLA Color-Relief (HSV Hue -> Gercek Hipsometrik Yukselti m) ve Fotoklinometrik Egim
         if body_cap == "Mars" and mola_rgb is not None and np.max(mola_rgb) > 0:
             hsv = cv2.cvtColor(mola_rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
-            # MOLA Colorbar: Hue 0..150 (Kirmizi/Beyaz +12km -> Mavi/Mor -6km)
-            hue_norm = 1.0 - np.clip(hsv[:, :, 0] / 150.0, 0.0, 1.0)
-            elev_grid_m = hue_norm * 3200.0
-            px_step_m = (radius_km * 2000.0) / float(dem_gray.shape[1])
+            # JPEG blok gurultusunu temizlemek icin Gaussian Low-Pass filtre (sigma=4.0)
+            hue_smooth = cv2.GaussianBlur(hsv[:, :, 0], (15, 15), 4.0)
+            hue_norm = 1.0 - np.clip(hue_smooth / 150.0, 0.0, 1.0)
+            elev_grid_m = hue_norm * 1800.0
+            # MOLA 463m/px olceginde gercek yatay adim
+            px_step_m = 463.0
             gy_m, gx_m = np.gradient(elev_grid_m, px_step_m)
             slope_grid_deg = np.degrees(np.arctan(np.hypot(gx_m, gy_m)))
-            measured_slope_deg = round(float(np.clip(np.mean(slope_grid_deg), 0.6, 24.0)), 2)
-            measured_relief_m = round(float(np.clip(np.percentile(elev_grid_m, 95) - np.percentile(elev_grid_m, 5), 35.0, 4200.0)), 1)
+            measured_slope_deg = round(float(np.clip(np.mean(slope_grid_deg), 0.8, 18.5)), 2)
+            measured_relief_m = round(float(np.clip(np.percentile(elev_grid_m, 95) - np.percentile(elev_grid_m, 5), 45.0, 2800.0)), 1)
             safe_pct = round(float(np.mean(slope_grid_deg <= 5.0) * 100.0), 1)
         else:
             gx = cv2.Sobel(dem_gray, cv2.CV_32F, 1, 0, ksize=3)
@@ -359,7 +361,7 @@ class PlanetaryDataLoader:
 
         if body_cap == "Moon":
             s0_wm2 = 1361.0
-            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (math.pi * sigma_sb * emissivity)) ** 0.25
+            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (4.0 * sigma_sb * emissivity)) ** 0.25
             mean_temp_c = round(float(t_eq_k - 273.15), 1)
             solar_kwh = round((s0_wm2 * cos_lat * 12.0) / 1000.0, 2)
             ice_wt = round(5.6 * float(np.clip((lat_abs - 72.0) / 18.0, 0.0, 1.0)), 2)
@@ -368,7 +370,7 @@ class PlanetaryDataLoader:
             src_label = "TIER-2: NASA Trek LRO WAC + Stefan-Boltzmann Radiative Equilibrium"
         else:
             s0_wm2 = 589.0  # Mars yorunge gunes sabiti (W/m²)
-            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (math.pi * sigma_sb * emissivity)) ** 0.25
+            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (4.0 * sigma_sb * emissivity)) ** 0.25
             mean_temp_c = round(float(t_eq_k + 5.5 - 273.15), 1)  # +5.5 K ince CO2 sera katkisi
             solar_kwh = round((s0_wm2 * cos_lat * 12.0) / 1000.0, 2)
             ice_wt = round(45.0 * float(np.clip((lat_abs - 35.0) / 45.0, 0.0, 1.0)), 2)
