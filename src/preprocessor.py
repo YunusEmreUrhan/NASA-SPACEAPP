@@ -11,7 +11,7 @@ class PlanetaryPreprocessor:
     - RGB g?r?nt? parlakl???ndan (cumsum / shape-from-shading) y?kselti veya e?im ?retimi TAMAMEN KALDIRILDI.
     - Y?kselti ve e?im yaln?zca ger?ek DEM kesiti (Copernicus GLO-90 / NASA SRTM 90m) veya yay?nlanm??
       LOLA/MOLA altimetre tablosu mevcutsa hesaplan?r; aksi halde 'veri yok' (UNAVAILABLE) d?ner.
-    - 'G?venli ini? / ?s noktas?' iddialar? kald?r?l?p 'D???k E?im ?n Tarama Penceresi' olarak adland?r?ld?.
+    - 'G?venli ini? / ?s noktas?' iddialar? kald?r?l?p 'D???k Eğim ?n Tarama Penceresi' olarak adland?r?ld?.
     """
 
     def __init__(self, target_size: int = 224):
@@ -78,7 +78,7 @@ class PlanetaryPreprocessor:
                 "low_slope_fraction_pct": round(low_slope_fraction_pct, 1),
                 "best_base_km": round(lowest_slope_km, 2),
                 "dem_source": dem_transect.get("source", "Copernicus GLO-90 / NASA SRTM 90m DEM"),
-                "status_label": "NASA verisinden i?lendi",
+                "status_label": "NASA verisinden işlendi",
                 "data_status": "MEASURED_DEM"
             }
 
@@ -102,7 +102,7 @@ class PlanetaryPreprocessor:
                 "low_slope_fraction_pct": round(low_slope_pct, 1),
                 "best_base_km": round(span_km / 2.0, 2),
                 "dem_source": published_physical.get("measurement_source", "NASA LRO LOLA / MGS MOLA Published Stats"),
-                "status_label": published_physical.get("status_label", "NASA verisinden i?lendi"),
+                "status_label": published_physical.get("status_label", "NASA verisinden işlendi"),
                 "data_status": "PUBLISHED_ALTIMETRY"
             }
 
@@ -131,7 +131,7 @@ class PlanetaryPreprocessor:
         mission_mode: str = "BALANCED"
     ) -> dict:
         """
-        G?rsel doku homojenli?i penceresi ? a??k?a 'G?rsel Ke?if Sinyali (?l??m De?ildir)' olarak etiketlenir.
+        G?rsel doku homojenli?i penceresi ? a??k?a 'G?rsel Ke?if Sinyali (±l??m De?ildir)' olarak etiketlenir.
         """
         if image_rgb is None or image_rgb.size == 0 or np.max(image_rgb) == 0:
             return {
@@ -196,7 +196,7 @@ class PlanetaryPreprocessor:
             "offset_from_center_km": round(offset_km, 2),
             "patch_scale_km": f"{patch_w_km} x {patch_w_km} km",
             "micro_suitability_pct": suitability,
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "pixel_box": [int(best_x - win // 2), int(best_y - win // 2), int(win), int(win)]
         }
 

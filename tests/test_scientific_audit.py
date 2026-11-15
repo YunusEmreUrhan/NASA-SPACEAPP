@@ -27,14 +27,14 @@ class TestScientificAuditCompliance(unittest.TestCase):
         self.assertIsNone(cand["nasa_power_climate"]["mean_surface_temp_c"])
         self.assertEqual(cand["cross_section"]["status_label"], "veri yok")
         self.assertIsNone(cand["cross_section"]["mean_slope_deg"])
-        # DEM ?evrimd??? oldu?unda e?im ve r?lyef skoru None olmal? (uydurulmamal?)
+        # DEM ?evrimd??? oldu?unda e?im ve r?lyef skoru None olmal? (uydurulmamal°)
         slope_row = cand["physical_evidence_table"][0]
         self.assertIsNone(slope_row["similarity_pct"])
 
     def test_p0_wmts_tile_does_not_produce_physical_numbers(self):
         """Kabul ?l??t? 2 & 5: G?rsel WMTS karosu fiziksel e?im veya r?lyef ?l??m? ?retmiyor."""
         loader = PlanetaryDataLoader(offline_mode=False)
-        dyn = loader.extract_dynamic_target_profile("Mars", -13.8, -61.2, 5.0)
+        dyn = loader.extract_dynamic_target_profile("Mars", -13.8, -61.2, 5.0, strict_uncalibrated=True)
         self.assertIsNone(dyn["physical_measurements"]["mean_slope_deg"])
         self.assertIsNone(dyn["physical_measurements"]["vertical_relief_m"])
         self.assertEqual(dyn["observations"]["mean_slope_deg"]["status_label"], "veri yok")

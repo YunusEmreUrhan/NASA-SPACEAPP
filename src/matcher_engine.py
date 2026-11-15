@@ -26,14 +26,14 @@ METHOD_VERSION = "TERRA-TWIN-Screening-v7.0-AuditCompliant"
 
 DIMENSION_NAMES = [
     "Litoloji & Albedo ?n Tarama ?ndeksi",
-    "Topografik E?im Uyumu (SRTM 90m DEM vs LOLA/MOLA)",
-    "Radyatif Ba?lam ?ndeksi (Senaryo Varsay?m?)",
-    "Kriyosferik / So?uk Tuzak Ba?lam? (Senaryo Varsay?m?)",
+    "Topografik Eğim Uyumu (SRTM 90m DEM vs LOLA/MOLA)",
+    "Radyatif Ba?lam ?ndeksi (Senaryo Varsay?m°)",
+    "Kriyosferik / So?uk Tuzak Ba?lam? (Senaryo Varsay?m°)",
     "Kurakl?k & R?zgar Ba?lam? (D?nya ?klim Filtresi)",
-    "Dikey R?lyef & ?ukur ?l?e?i (SRTM 90m DEM vs LOLA/MOLA)"
+    "Dikey Rölyef & ?ukur ?l?e?i (SRTM 90m DEM vs LOLA/MOLA)"
 ]
 
-# Madde 7 [P1]: A??rl?klar a??k?a 'senaryo varsay?m?' olarak etiketlenmi?tir (NASA standard? de?ildir)
+# Madde 7 [P1]: A??rl?klar a??k?a 'senaryo varsayımı' olarak etiketlenmi?tir (NASA standard? de?ildir)
 MISSION_WEIGHT_PRESETS = {
     "BALANCED": [0.20, 0.20, 0.15, 0.15, 0.15, 0.15],
     "HABITAT_LAVA_TUBE": [0.25, 0.15, 0.15, 0.10, 0.05, 0.30],
@@ -47,9 +47,9 @@ class PlanetaryMatcherEngine:
     P0-P3 Bilimsel Denetim Uyumlu ?n Tarama (Preliminary Screening) Motoru:
     1) Do?rulanmam?? sabit 35/30/20/15 form?l? kald?r?lm??t?r.
     2) ?l??lm?? Fiziksel Benzerlik yaln?zca ayn? fiziksel tan?ma ve SI birimine sahip
-       e?li (paired) jeomorfolojik/topografik ?l??mlerden (E?im ?, Dikey R?lyef m, Havza ?l?e?i km)
+       e?li (paired) jeomorfolojik/topografik ?l??mlerden (Eğim ?, Dikey Rölyef m, Havza ?l?e?i km)
        hesaplan?r; eksik g?zlemler ASLA uydurulmaz (imputation=False).
-    3) NASA POWER D?nya meteorolojisi (2m/y?zey s?cakl???, ya???) Ay/Mars y?zey s?cakl???yla
+    3) NASA POWER D?nya meteorolojisi (2m/y?zey s?cakl???, ya??°) Ay/Mars y?zey s?cakl???yla
        do?rudan e?de?er puanlanmaz (Madde 4); yaln?zca D?nya saha ba?lam? olarak sunulur.
     4) G?rsel benzerlik (CLIP / Morfoloji) fiziksel skora kar??t?r?lmaz; 'G?rsel Ke?if Sinyali'
        olarak ayr? raporlan?r ve CLIP y?klenemezse a??k?a 'model kullan?lamad?' d?ner (Madde 6).
@@ -140,7 +140,7 @@ class PlanetaryMatcherEngine:
                 "texture_similarity_pct": None,
                 "hybrid_visual_pct": None,
                 "status_label": "veri yok",
-                "engine_type": "Uydu G?r?nt?s? Yok (Skora Kat?lmad?)"
+                "engine_type": "Uydu G?r?nt?s? Yok (Skora Kat?lmad°)"
             }
 
         pil_e, ten_e = self.preprocessor.preprocess_for_clip(earth_rgb)
@@ -169,7 +169,7 @@ class PlanetaryMatcherEngine:
                 "clip_similarity_pct": clip_pct,
                 "texture_similarity_pct": tex_score,
                 "hybrid_visual_pct": round(0.70 * clip_pct + 0.30 * tex_score, 1),
-                "status_label": "senaryo varsay?m?",
+                "status_label": "senaryo varsayımı",
                 "engine_type": "G?rsel Ke?if Sinyali (CLIP-ViT-B/32 ? Fiziksel ?l??m De?ildir)"
             }
 
@@ -177,7 +177,7 @@ class PlanetaryMatcherEngine:
             "clip_similarity_pct": None,
             "texture_similarity_pct": tex_score,
             "hybrid_visual_pct": tex_score,
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "engine_type": f"{self.clip_status} | Yaln?zca Sobel Gradyan Doku Sinyali (Fiziksel Skora Kat?lmaz)"
         }
 
@@ -190,18 +190,18 @@ class PlanetaryMatcherEngine:
     ) -> dict:
         """
         P0 Madde 1, 2, 3, 4 & P1 Madde 7, 8:
-        - Yaln?zca fiziksel tan?m? ve SI birimi ayn? olan e?li (paired) ?l??mler (E?im ?, R?lyef m, ?l?ek km)
+        - Yaln?zca fiziksel tan?m? ve SI birimi ayn? olan e?li (paired) ?l??mler (Eğim ?, Rölyef m, ?l?ek km)
           kar??la?t?r?l?r ve puanlan?r.
-        - NASA POWER (D?nya 2m/y?zey s?cakl??? ve ya???) Ay/Mars s?cakl???yla E?LE?T?R?LMEZ (weight=0.0,
+        - NASA POWER (D?nya 2m/y?zey s?cakl??? ve ya??°) Ay/Mars s?cakl???yla E?LE?T?R?LMEZ (weight=0.0,
           'Ba?lam Verisi ? G?vdeler Aras? Do?rudan Puanlanmaz').
         - Eksik g?zlemler ASLA tahmin edilmez (imputation=False); veri kapsam? (data_coverage_pct) ve
-          belirsizlik aral??? (? uncertainty) a??k?a hesaplan?r.
+          belirsizlik aral??? (± uncertainty) a??k?a hesaplan?r.
         """
         pm = target.get("physical_measurements", {})
         t_cs = target.get("cross_section", {})
         w_map = scenario_weights or {"slope": 0.45, "relief": 0.35, "scale": 0.20}
 
-        # 1. Ortalama Topografik E?im (deg ?) ? SRTM 90m DEM vs LOLA/MOLA DEM
+        # 1. Ortalama Topografik Eğim (deg °) ? SRTM 90m DEM vs LOLA/MOLA DEM
         t_slope = pm.get("mean_slope_deg")
         t_slope_unc = pm.get("slope_uncertainty_deg", 0.4)
         e_slope = earth_cs.get("mean_slope_deg") if earth_cs.get("data_status") == "MEASURED_DEM" else None
@@ -211,11 +211,11 @@ class PlanetaryMatcherEngine:
             diff_s = abs(float(t_slope) - float(e_slope))
             sim_slope = round(max(0.0, 100.0 - diff_s * 6.0), 1)
             unc_s_pct = round(min(25.0, (float(t_slope_unc or 0.4) + float(e_slope_unc)) * 6.0), 1)
-            status_slope = "NASA verisinden i?lendi"
+            status_slope = "NASA verisinden işlendi"
         else:
             sim_slope, unc_s_pct, status_slope = None, None, "veri yok"
 
-        # 2. Dikey Topografik R?lyef (m) ? SRTM 90m DEM vs LOLA/MOLA DEM
+        # 2. Dikey Topografik Rölyef (m) ? SRTM 90m DEM vs LOLA/MOLA DEM
         t_relief = pm.get("vertical_relief_m")
         t_relief_unc = pm.get("relief_uncertainty_m", 10.0)
         e_relief = earth_cs.get("relief_m") if earth_cs.get("data_status") == "MEASURED_DEM" else None
@@ -227,7 +227,7 @@ class PlanetaryMatcherEngine:
             sim_relief = round((r_min / r_max) * 100.0, 1)
             rel_unc = ((float(t_relief_unc or 10.0) + float(e_relief_unc)) / r_max) * 100.0
             unc_r_pct = round(min(25.0, max(2.0, rel_unc)), 1)
-            status_relief = "NASA verisinden i?lendi"
+            status_relief = "NASA verisinden işlendi"
         else:
             sim_relief, unc_r_pct, status_relief = None, None, "veri yok"
 
@@ -237,7 +237,7 @@ class PlanetaryMatcherEngine:
         if t_scale is not None and e_scale is not None and max(float(t_scale), float(e_scale)) > 0:
             sim_scale = round((min(float(t_scale), float(e_scale)) / max(float(t_scale), float(e_scale))) * 100.0, 1)
             unc_sc_pct = 5.0
-            status_scale = "NASA'dan al?nd?" if target.get("data_status") != "senaryo varsay?m?" else "senaryo varsay?m?"
+            status_scale = "NASA'dan alındı" if target.get("data_status") != "senaryo varsayımı" else "senaryo varsayımı"
         else:
             sim_scale, unc_sc_pct, status_scale = None, None, "veri yok"
 
@@ -248,10 +248,10 @@ class PlanetaryMatcherEngine:
 
         rows = [
             {
-                "criterion": "Ortalama Arazi E?imi (DEM)",
-                "earth_measured": f"{e_slope}? (?0.5?)" if e_slope is not None else "Veri Yok",
-                "target_measured": f"{t_slope}? (?{t_slope_unc}?)" if t_slope is not None else "Veri Yok",
-                "unit": "deg (?)",
+                "criterion": "Ortalama Arazi Eğimi (DEM)",
+                "earth_measured": f"{e_slope}? (±0.5°)" if e_slope is not None else "Veri Yok",
+                "target_measured": f"{t_slope}? (±{t_slope_unc}°)" if t_slope is not None else "Veri Yok",
+                "unit": "deg (±)",
                 "similarity_pct": sim_slope,
                 "uncertainty_pct": unc_s_pct,
                 "weight": w_map["slope"],
@@ -260,9 +260,9 @@ class PlanetaryMatcherEngine:
                 "source": "Copernicus/SRTM 90m DEM ? NASA LOLA/MOLA"
             },
             {
-                "criterion": "Dikey Topografik R?lyef (?Z)",
-                "earth_measured": f"{e_relief} m (?8 m)" if e_relief is not None else "Veri Yok",
-                "target_measured": f"{t_relief} m (?{t_relief_unc} m)" if t_relief is not None else "Veri Yok",
+                "criterion": "Dikey Topografik Rölyef (±Z)",
+                "earth_measured": f"{e_relief} m (±8 m)" if e_relief is not None else "Veri Yok",
+                "target_measured": f"{t_relief} m (±{t_relief_unc} m)" if t_relief is not None else "Veri Yok",
                 "unit": "m",
                 "similarity_pct": sim_relief,
                 "uncertainty_pct": unc_r_pct,
@@ -273,8 +273,8 @@ class PlanetaryMatcherEngine:
             },
             {
                 "criterion": "B?lgesel Havza / Pencere ?l?e?i",
-                "earth_measured": f"{e_scale} km (?0.5 km)" if e_scale is not None else "Veri Yok",
-                "target_measured": f"{t_scale} km (?1.5 km)" if t_scale is not None else "Veri Yok",
+                "earth_measured": f"{e_scale} km (±0.5 km)" if e_scale is not None else "Veri Yok",
+                "target_measured": f"{t_scale} km (±1.5 km)" if t_scale is not None else "Veri Yok",
                 "unit": "km",
                 "similarity_pct": sim_scale,
                 "uncertainty_pct": unc_sc_pct,
@@ -297,7 +297,7 @@ class PlanetaryMatcherEngine:
             },
             {
                 "criterion": "Ya??? & Kurakl?k Ba?lam? (Yaln?zca D?nya Filtresi)",
-                "earth_measured": f"{e_precip} mm/g?n (?0.05)" if e_precip is not None else "Veri Yok",
+                "earth_measured": f"{e_precip} mm/g?n (±0.05)" if e_precip is not None else "Veri Yok",
                 "target_measured": "Uygulanamaz (Vakum / Kuru Regolit)",
                 "unit": "mm/day",
                 "similarity_pct": None,
@@ -337,7 +337,7 @@ class PlanetaryMatcherEngine:
     def run_weight_sensitivity_analysis(candidates: list, base_weights: np.ndarray) -> dict:
         """
         Madde 7 [P1]: A??rl?k Duyarl?l?k Analizi (Weight Sensitivity Analysis).
-        Senaryo a??rl?klar? makul aral?kta (?%25 Dirichlet/Grid pert?rbasyonu, 24 farkl? kombinasyon)
+        Senaryo a??rl?klar? makul aral?kta (±%25 Dirichlet/Grid pert?rbasyonu, 24 farkl? kombinasyon)
         de?i?tirildi?inde aday s?ralamas?n?n ne kadar de?i?ti?ini test eder.
         """
         if not candidates:
@@ -421,15 +421,15 @@ class PlanetaryMatcherEngine:
         t_vec = target.get("features_6d", [0.5]*6)
         c_basalt, c_flat, c_therm, c_ice, c_wind, c_cave = cand_vec
         earth_processes = {
-            "Volkanik Bazalt & ??kme Yap?lar? (?n Tarama ?ndeksi)": round((0.55 * c_cave + 0.45 * c_basalt) * 100.0, 1),
-            "Tektonik Kanyon & Yama? Erozyonu (?n Tarama ?ndeksi)": round((0.50 * (1.0 - c_flat) + 0.50 * c_cave) * 100.0, 1),
-            "Kriyosferik Permafrost Dinami?i (?n Tarama ?ndeksi)": round(c_ice * 100.0, 1),
-            "eoliyen (R?zgar) Tortul Ta??n?m? (?n Tarama ?ndeksi)": round((0.60 * c_wind + 0.40 * c_flat) * 100.0, 1)
+            "Volkanik Bazalt & ??kme Yap?lar? (±n Tarama ?ndeksi)": round((0.55 * c_cave + 0.45 * c_basalt) * 100.0, 1),
+            "Tektonik Kanyon & Yama? Erozyonu (±n Tarama ?ndeksi)": round((0.50 * (1.0 - c_flat) + 0.50 * c_cave) * 100.0, 1),
+            "Kriyosferik Permafrost Dinami?i (±n Tarama ?ndeksi)": round(c_ice * 100.0, 1),
+            "eoliyen (R?zgar) Tortul Ta??n?m? (±n Tarama ?ndeksi)": round((0.60 * c_wind + 0.40 * c_flat) * 100.0, 1)
         }
         dominant_earth_proc = max(earth_processes.items(), key=lambda x: x[1])
         proc_match = round((1.0 - float(np.mean(np.abs(np.array(t_vec) - np.array(cand_vec))))) * 100.0, 1)
         return {
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "target_planetary_process": target.get("primary_process", "Jeomorfolojik S?re? ?n Taramas?"),
             "dominant_earth_process": dominant_earth_proc[0],
             "dominant_process_intensity_pct": dominant_earth_proc[1],
@@ -445,14 +445,14 @@ class PlanetaryMatcherEngine:
         temp_c = climate.get("mean_surface_temp_c")
 
         if temp_c is not None and temp_c < 0.0:
-            guild = "Kriyofilik / Permafrost Ekstremofil Saha Hipotezi (Literat?r Ba?lam?)"
+            guild = "Kriyofilik / Permafrost Ekstremofil Saha Hipotezi (Literat?r Ba?lam°)"
         elif c_cave > 0.65:
-            guild = "Endolitik / Yeralt? Bazaltik Bo?luk Mikrobiyomu Hipotezi (Literat?r Ba?lam?)"
+            guild = "Endolitik / Yeralt? Bazaltik Bo?luk Mikrobiyomu Hipotezi (Literat?r Ba?lam°)"
         else:
-            guild = "Hiper-Kurak ??l / Evaporit Mikrobiyomu Hipotezi (Literat?r Ba?lam?)"
+            guild = "Hiper-Kurak ??l / Evaporit Mikrobiyomu Hipotezi (Literat?r Ba?lam°)"
 
         return {
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "extremophile_guild": guild,
             "biosignature_preservation_pct": round((0.5 * c_basalt + 0.5 * max(c_cave, c_ice)) * 100.0, 1),
             "uv_radiation_stress_pct": round(min(99.0, (float(solar_kwh) / 7.2) * 100.0), 1) if solar_kwh is not None else None,
@@ -511,7 +511,7 @@ class PlanetaryMatcherEngine:
             return {}
 
         return {
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "source_body": current_body,
             "bridge_body": opposite_body,
             "bridge_target_id": best_match["id"],
@@ -619,7 +619,7 @@ class PlanetaryMatcherEngine:
             parametric_6d_pct = round(float(np.sum(np.array(dim_matches_pct) * weights)), 1)
 
             # Madde 1 & 8 [P0/P1]: E?li fiziksel DEM ?l??m? varsa skor do?rudan fiziksel ?l??mden gelir;
-            # veri yoksa (?r. ?evrimd??? veya serbest koordinat) fiziksel skor None kal?r (ASLA uydurulmaz!).
+            # veri yoksa (±r. ?evrimd??? veya serbest koordinat) fiziksel skor None kal?r (ASLA uydurulmaz!).
             measured_sim = phys_evidence["measured_physical_similarity_pct"]
             topo_match = measured_sim if measured_sim is not None else 0.0
             screening_score = measured_sim if measured_sim is not None else parametric_6d_pct
@@ -724,7 +724,7 @@ class PlanetaryMatcherEngine:
 
         c_lat, c_lon = float(self.lats[chosen_idx]), float(self.lons[chosen_idx])
         return {
-            "status_label": "senaryo varsay?m?",
+            "status_label": "senaryo varsayımı",
             "weakest_dimension_index": weakest_dim,
             "weakest_dimension_name": dim_name,
             "primary_site_score_in_dim_pct": primary_cand["dimension_matches_pct"][weakest_dim],

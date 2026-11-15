@@ -48,11 +48,12 @@
     ];
 
     const QUICK_COORDS = [
-      { label: "\uD83C\uDF0B Valles Marineris", body: "Mars", lat: -13.8, lon: -61.2 },
-      { label: "\u2744\uFE0F Korolev Buzulu", body: "Mars", lat: 72.8, lon: 164.5 },
-      { label: "\u26F0\uFE0F Olympus Mons", body: "Mars", lat: 18.65, lon: -133.8 },
-      { label: "\uD83C\uDF11 Syrtis Major", body: "Mars", lat: 8.4, lon: 69.5 },
-      { label: "\uD83C\uDF15 Tycho Krateri (Ay)", body: "Moon", lat: -43.31, lon: -11.36 }
+      { label: "\uD83C\uDF15 Mare Imbrium (Ay)", body: "Moon", lat: 32.8, lon: -15.6 },
+      { label: "\uD83C\uDF15 Tycho Krateri (Ay)", body: "Moon", lat: -43.31, lon: -11.36 },
+      { label: "\uD83C\uDF15 Aristarchus Platosu (Ay)", body: "Moon", lat: 23.7, lon: -47.4 },
+      { label: "\uD83C\uDF0B Valles Marineris (Mars)", body: "Mars", lat: -13.8, lon: -61.2 },
+      { label: "\u2744\uFE0F Korolev Buzulu (Mars)", body: "Mars", lat: 72.8, lon: 164.5 },
+      { label: "\u26F0\uFE0F Olympus Mons (Mars)", body: "Mars", lat: 18.65, lon: -133.8 }
     ];
 
     function statusBadgeClass(lbl) {
@@ -95,7 +96,9 @@
     function PlanetViewport({ body, centerLat, centerLon, imagery, grid, markers, customMarkers, splitBridgeCoords, selectedId, onSelect, onGlobeClick }) {
       const hostRef = useRef(null);
       const apiRef = useRef(null);
+      const sceneObjsRef = useRef(null);
       const [hoverCoords, setHoverCoords] = useState(null);
+
       const latest = useRef({ imagery, grid, markers, selectedId, onSelect, onGlobeClick });
       latest.current = { imagery, grid, markers, selectedId, onSelect, onGlobeClick };
 
@@ -112,16 +115,16 @@
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-        const initPos = geographicPosition(centerLat || 20, centerLon || 10, 5.8);
+        const initPos = geographicPosition(centerLat || 15, centerLon || 20, 5.8);
         camera.position.copy(initPos);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
-        controls.minDistance = 2.6;
+        controls.minDistance = 2.5;
         controls.maxDistance = 12;
 
-        scene.add(new THREE.AmbientLight(0xb5c8de, 2.0));
+        scene.add(new THREE.AmbientLight(0xb5c8de, 2.1));
         const sun = new THREE.DirectionalLight(0xffffff, 2.8);
         sun.position.set(-4, 6, 8);
         scene.add(sun);
@@ -160,51 +163,18 @@
 
         const markerGroup = new THREE.Group();
         scene.add(markerGroup);
-        const markerMeshes = [];
-        const labelElements = [];
-        const markerGeo = new THREE.SphereGeometry(0.032, 14, 14);
-        const ringGeo = new THREE.RingGeometry(0.05, 0.068, 36);
-
-        (customMarkers || []).forEach((item) => {
-          const col = item.colorHex || 0x72f2ca;
-          const mMat = new THREE.MeshBasicMaterial({ color: col });
-          const rMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-          const pos = geographicPosition(item.lat, item.lon, 2.026);
-          const mesh = new THREE.Mesh(markerGeo, mMat);
-          mesh.position.copy(pos);
-          mesh.userData.id = item.id;
-          markerGroup.add(mesh);
-          markerMeshes.push(mesh);
-
-          const ring = new THREE.Mesh(ringGeo, rMat);
-          ring.position.copy(pos.clone().multiplyScalar(1.002));
-          ring.lookAt(pos.clone().multiplyScalar(2));
-          markerGroup.add(ring);
-
-          const el = document.createElement("button");
-          el.className = "globe-label";
-          el.textContent = item.badge ? item.badge + " " + item.name : item.name;
-          el.onclick = (ev) => { ev.stopPropagation(); latest.current.onSelect && latest.current.onSelect(item.id); };
-          container.appendChild(el);
-          labelElements.push({ el, pos, id: item.id });
-        });
-
-        if (body === "Earth" && splitBridgeCoords) {
-          const pStart = geographicPosition(splitBridgeCoords.fromLat, splitBridgeCoords.fromLon, 2.02);
-          const pEnd = geographicPosition(splitBridgeCoords.toLat, splitBridgeCoords.toLon, 2.02);
-          const arcPts = [];
-          for (let i = 0; i <= 48; i++) {
-            const t = i / 48;
-            const interp = new THREE.Vector3().lerpVectors(pStart, pEnd, t).normalize();
-            arcPts.push(interp.multiplyScalar(2.02 + Math.sin(t * Math.PI) * 0.14));
-          }
-          markerGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPts), new THREE.LineBasicMaterial({ color: 0x00f5d4 })));
-        }
+        sceneObjsRef.current = { container, camera, controls, markerGroup, markerMeshes: [], labelElements: [] };
 
         apiRef.current = {
-          focus: () => { camera.position.copy(geographicPosition(centerLat || 20, centerLon || 10, 4.8)); controls.update(); },
-          zoom: (f) => { camera.position.multiplyScalar(f).clampLength(2.7, 12); controls.update(); },
-          reset: () => { camera.position.copy(initPos); controls.update(); }
+          focus: (la, lo) => {
+            const tLa = la !== undefined ? la : (centerLat || 15);
+            const tLo = lo !== undefined ? lo : (centerLon || 20);
+            camera.position.copy(geographicPosition(tLa, tLo, 4.9));
+            controls.target.set(0, 0, 0);
+            controls.update();
+          },
+          zoom: (f) => { camera.position.multiplyScalar(f).clampLength(2.6, 12); controls.update(); },
+          reset: () => { camera.position.copy(initPos); controls.target.set(0, 0, 0); controls.update(); }
         };
 
         const ro = new ResizeObserver(() => {
@@ -217,8 +187,8 @@
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
-        let sx = 0, sy = 0;
-        const onDown = (e) => { sx = e.clientX; sy = e.clientY; };
+        let sx = 0, sy = 0, downTime = 0;
+        const onDown = (e) => { sx = e.clientX; sy = e.clientY; downTime = Date.now(); };
         const onMove = (e) => {
           const b = renderer.domElement.getBoundingClientRect();
           pointer.set(((e.clientX - b.left) / b.width) * 2 - 1, (-(e.clientY - b.top) / b.height) * 2 + 1);
@@ -227,12 +197,18 @@
           setHoverCoords(hit ? vectorToGeographic(hit.point) : null);
         };
         const onUp = (e) => {
-          if (Math.hypot(e.clientX - sx, e.clientY - sy) > 5) return;
+          const dist = Math.hypot(e.clientX - sx, e.clientY - sy);
+          const elapsed = Date.now() - downTime;
+          if (dist > 14 && elapsed > 350) return;
           const b = renderer.domElement.getBoundingClientRect();
           pointer.set(((e.clientX - b.left) / b.width) * 2 - 1, (-(e.clientY - b.top) / b.height) * 2 + 1);
           raycaster.setFromCamera(pointer, camera);
-          const hitM = raycaster.intersectObjects(markerMeshes)[0];
-          if (hitM && latest.current.onSelect) { latest.current.onSelect(hitM.object.userData.id); return; }
+          const meshes = sceneObjsRef.current ? sceneObjsRef.current.markerMeshes : [];
+          const hitM = raycaster.intersectObjects(meshes)[0];
+          if (hitM && latest.current.onSelect) {
+            latest.current.onSelect(hitM.object.userData.id);
+            return;
+          }
           const hitG = raycaster.intersectObject(globe)[0];
           if (hitG && latest.current.onGlobeClick) {
             const c = vectorToGeographic(hitG.point);
@@ -255,8 +231,9 @@
             mat.needsUpdate = true;
           }
           const camDir = camera.position.clone().normalize();
-          labelElements.forEach(({ el, pos, id }) => {
-            const vis = latest.current.markers && pos.clone().normalize().dot(camDir) > 0.22;
+          const lbls = sceneObjsRef.current ? sceneObjsRef.current.labelElements : [];
+          lbls.forEach(({ el, pos, id }) => {
+            const vis = latest.current.markers && pos.clone().normalize().dot(camDir) > 0.20;
             el.style.display = vis ? "block" : "none";
             if (vis) {
               const p = pos.clone().project(camera);
@@ -275,31 +252,90 @@
           cancelAnimationFrame(frameId);
           ro.disconnect();
           controls.dispose();
-          labelElements.forEach((x) => x.el.remove());
+          if (sceneObjsRef.current) {
+            sceneObjsRef.current.labelElements.forEach((x) => x.el.remove());
+          }
           renderer.dispose();
           renderer.domElement.remove();
         };
-      }, [body, centerLat, centerLon, customMarkers, splitBridgeCoords]);
+      }, [body]);
+
+      useEffect(() => {
+        const ctx = sceneObjsRef.current;
+        if (!ctx) return;
+        const { container, markerGroup } = ctx;
+        while (markerGroup.children.length > 0) {
+          markerGroup.remove(markerGroup.children[0]);
+        }
+        ctx.labelElements.forEach((x) => x.el.remove());
+        ctx.markerMeshes = [];
+        ctx.labelElements = [];
+
+        const markerGeo = new THREE.SphereGeometry(0.035, 14, 14);
+        const ringGeo = new THREE.RingGeometry(0.055, 0.075, 36);
+
+        (customMarkers || []).forEach((item) => {
+          const col = item.colorHex || 0x72f2ca;
+          const mMat = new THREE.MeshBasicMaterial({ color: col });
+          const rMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+          const pos = geographicPosition(item.lat, item.lon, 2.028);
+          const mesh = new THREE.Mesh(markerGeo, mMat);
+          mesh.position.copy(pos);
+          mesh.userData.id = item.id;
+          markerGroup.add(mesh);
+          ctx.markerMeshes.push(mesh);
+
+          const ring = new THREE.Mesh(ringGeo, rMat);
+          ring.position.copy(pos.clone().multiplyScalar(1.002));
+          ring.lookAt(pos.clone().multiplyScalar(2));
+          markerGroup.add(ring);
+
+          const el = document.createElement("button");
+          el.className = "globe-label";
+          el.textContent = item.badge ? item.badge + " " + item.name : item.name;
+          el.onclick = (ev) => { ev.stopPropagation(); latest.current.onSelect && latest.current.onSelect(item.id); };
+          container.appendChild(el);
+          ctx.labelElements.push({ el, pos, id: item.id });
+        });
+
+        if (body === "Earth" && splitBridgeCoords) {
+          const pStart = geographicPosition(splitBridgeCoords.fromLat, splitBridgeCoords.fromLon, 2.02);
+          const pEnd = geographicPosition(splitBridgeCoords.toLat, splitBridgeCoords.toLon, 2.02);
+          const arcPts = [];
+          for (let i = 0; i <= 48; i++) {
+            const t = i / 48;
+            const interp = new THREE.Vector3().lerpVectors(pStart, pEnd, t).normalize();
+            arcPts.push(interp.multiplyScalar(2.02 + Math.sin(t * Math.PI) * 0.14));
+          }
+          markerGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPts), new THREE.LineBasicMaterial({ color: 0x00f5d4 })));
+        }
+      }, [body, customMarkers, splitBridgeCoords]);
+
+      useEffect(() => {
+        if (centerLat !== undefined && centerLon !== undefined && apiRef.current) {
+          apiRef.current.focus(centerLat, centerLon);
+        }
+      }, [centerLat, centerLon]);
 
       return h("div", { className: "planet-viewport" },
         h("div", { className: "planet-canvas", ref: hostRef }),
         h("div", { className: "viewport-caption" },
           h("span", { className: "status-dot" }),
-          body === "Earth" ? "3B D\u00DCNYA ANALOG K\u00DCRES\u0130 (11,469 H\u00DCCRE)" : "3B " + body.toUpperCase() + " Y\u00DCZEY K\u00DCRES\u0130",
+          body === "Earth" ? "3B D\u00DCNYA ANALOG K\u00DCRES\u0130 (11,469 H\u00DCCRE)" : "3B " + body.toUpperCase() + " Y\u00DCZEY K\u00DCRES\u0130 (Y\u00DCZEYE TIKLAYIN)",
           hoverCoords && h("span", { style: { marginLeft: 10, color: "#8ce9d0", fontWeight: 600 } },
-            "\uD83C\uDFAF \u0130MLE\u00C7: " + hoverCoords.lat + "\u00B0, " + hoverCoords.lon + "\u00B0 (K\u00FCreye T\u0131kla)"
+            "\uD83C\uDFAF \u0130MLE\u00C7: " + hoverCoords.lat + "\u00B0, " + hoverCoords.lon + "\u00B0 (Analiz \u0130\u00E7in T\u0131kla)"
           ),
           h("span", { className: "view-mode" }, "3D GLOBE")
         ),
         h("div", { className: "viewport-tools" },
-          h("button", { title: "Odaklan", onClick: () => apiRef.current?.focus() }, "\u2316"),
+          h("button", { title: "Odaklan", onClick: () => apiRef.current?.focus(centerLat, centerLon) }, "\u2316"),
           h("button", { title: "Yak\u0131nla\u015Ft\u0131r", onClick: () => apiRef.current?.zoom(0.8) }, "+"),
           h("button", { title: "Uzakla\u015Ft\u0131r", onClick: () => apiRef.current?.zoom(1.2) }, "\u2212"),
           h("button", { title: "S\u0131f\u0131rla", onClick: () => apiRef.current?.reset() }, "\u21BA")
         ),
         h("div", { className: "viewport-bottom" },
-          h("span", null, body === "Earth" ? "NASA GIBS \u00B7 SRTM 90m DEM + NASA POWER" : "NASA TREK WMTS (G\u00F6rsel Ba\u011Flam)"),
-          h("span", null, "S\u00FCr\u00FCkle: D\u00F6nd\u00FCr \u00B7 Tekerlek: Yak\u0131nla\u015Ft\u0131r \u00B7 T\u0131kla: Koordinat Se\u00E7")
+          h("span", null, body === "Earth" ? "NASA GIBS \u00B7 SRTM 90m DEM + NASA POWER" : "NASA LRO LOLA / MGS MOLA + WMTS"),
+          h("span", { style: { color: "#8ce9d0" } }, "K\u00FCre \u00FCzerinde istedi\u011Finiz kratere veya d\u00FCzl\u00FC\u011Fe t\u0131klayarak an\u0131nda analiz edebilirsiniz")
         )
       );
     }
@@ -384,9 +420,9 @@
 
       const [selectionMode, setSelectionMode] = useState("PRESET");
       const [presetId, setPresetId] = useState("MOON_MARE_TRANQUILLITATIS_PIT");
-      const [dynBody, setDynBody] = useState("Mars");
-      const [dynLat, setDynLat] = useState(-13.8);
-      const [dynLon, setDynLon] = useState(-61.2);
+      const [dynBody, setDynBody] = useState("Moon");
+      const [dynLat, setDynLat] = useState(8.34);
+      const [dynLon, setDynLon] = useState(33.22);
       const [radiusKm, setRadiusKm] = useState(5.0);
       const [missionMode, setMissionMode] = useState("HABITAT_LAVA_TUBE");
       const [customWeights, setCustomWeights] = useState([0.25, 0.20, 0.15, 0.15, 0.10, 0.15]);
@@ -398,13 +434,23 @@
       const [selectedCandIdx, setSelectedCandIdx] = useState(0);
       const [showHud, setShowHud] = useState(true);
       const [activeTab, setActiveTab] = useState(1);
+      const [toastMsg, setToastMsg] = useState("");
+
+      useEffect(() => {
+        if (!toastMsg) return;
+        const t = setTimeout(() => setToastMsg(""), 3500);
+        return () => clearTimeout(t);
+      }, [toastMsg]);
 
       async function runAnalysis(overrides = {}) {
         setLoading(true);
+        const effMode = overrides.selection_mode ?? selectionMode;
+        const effPreset = overrides.preset_id ?? presetId;
+        const effBody = overrides.body ?? (effMode === "PRESET" ? (PRESET_CATALOG.find((p) => p.id === effPreset)?.body || "Moon") : dynBody);
         const payload = {
-          selection_mode: overrides.selection_mode ?? selectionMode,
-          preset_id: overrides.preset_id ?? presetId,
-          body: overrides.body ?? (selectionMode === "PRESET" ? (PRESET_CATALOG.find((p) => p.id === presetId)?.body || "Moon") : dynBody),
+          selection_mode: effMode,
+          preset_id: effPreset,
+          body: effBody,
           lat: overrides.lat ?? dynLat,
           lon: overrides.lon ?? dynLon,
           radius_km: overrides.radius_km ?? radiusKm,
@@ -431,7 +477,9 @@
         }
       }
 
-      useEffect(() => { runAnalysis(); }, [selectionMode, presetId, dynBody, radiusKm, missionMode, noveltyOnly, minSepKm]);
+      useEffect(() => {
+        runAnalysis();
+      }, [selectionMode, presetId, dynBody, dynLat, dynLon, radiusKm, missionMode, noveltyOnly, minSepKm]);
 
       const targetProfile = apiData?.target;
       const candidates = apiData?.primary_candidates || [];
@@ -467,9 +515,10 @@
         return arr;
       }, [candidates, compSite]);
 
+      const activeTargetBody = (!split && (body === "Moon" || body === "Mars")) ? body : (targetProfile?.body || dynBody || "Moon");
+
       const targetMarkers = useMemo(() => {
-        const bName = targetProfile?.body || "Moon";
-        const arr = PRESET_CATALOG.filter((p) => p.body === bName).map((p) => ({
+        const arr = PRESET_CATALOG.filter((p) => p.body === activeTargetBody).map((p) => ({
           id: p.id,
           name: p.name.split("(")[0].trim(),
           lat: p.lat,
@@ -477,18 +526,25 @@
           badge: "\uD83C\uDFDB\uFE0F",
           colorHex: p.id === presetId && selectionMode === "PRESET" ? 0x00d4ff : 0x9de9d3
         }));
-        if (selectionMode === "DYNAMIC" && targetProfile) {
+        if (selectionMode === "DYNAMIC") {
           arr.push({
-            id: targetProfile.id,
-            name: targetProfile.body + " (" + targetProfile.lat + "\u00B0, " + targetProfile.lon + "\u00B0)",
-            lat: targetProfile.lat,
-            lon: targetProfile.lon,
-            badge: "\uD83C\uDFAF SE\u00C7\u0130L\u0130",
+            id: "DYNAMIC_PIN",
+            name: activeTargetBody + " (" + dynLat + "\u00B0, " + dynLon + "\u00B0)",
+            lat: dynLat,
+            lon: dynLon,
+            badge: "\uD83C\uDFAF SE\u00C7\u0130L\u0130 HEDEF",
             colorHex: 0xff006e
           });
         }
         return arr;
-      }, [targetProfile, presetId, selectionMode]);
+      }, [activeTargetBody, presetId, selectionMode, dynLat, dynLon]);
+
+      const splitBridgeMemo = useMemo(() => {
+        if (compSite && candidates[0]) {
+          return { fromLat: candidates[0].lat, fromLon: candidates[0].lon, toLat: compSite.lat, toLon: compSite.lon };
+        }
+        return null;
+      }, [compSite, candidates]);
 
       function onGlobeClick(clickedBody, lat, lon) {
         if (clickedBody === "Moon" || clickedBody === "Mars") {
@@ -496,16 +552,50 @@
           setDynBody(clickedBody);
           setDynLat(lat);
           setDynLon(lon);
-          runAnalysis({ selection_mode: "DYNAMIC", body: clickedBody, lat, lon });
+          setToastMsg("\uD83C\uDFAF " + clickedBody + " Y\u00FCzeyi Se\u00E7ildi: (" + lat + "\u00B0, " + lon + "\u00B0) \u2014 D\u00FCnya Analoglar\u0131 Hesapland\u0131!");
+        } else if (clickedBody === "Earth" && candidates.length > 0) {
+          let bestIdx = 0, bestD = 1e9;
+          candidates.forEach((c, i) => {
+            const d = Math.hypot(c.lat - lat, c.lon - lon);
+            if (d < bestD) { bestD = d; bestIdx = i; }
+          });
+          setSelectedCandIdx(bestIdx);
+          setToastMsg("\uD83C\uDF0D #" + (bestIdx + 1) + " Aday Saha Se\u00E7ildi: " + candidates[bestIdx].region_name.split("[")[0].trim());
         }
       }
 
       function onMarkerSelect(id) {
         if (id.indexOf("cand_") === 0) {
-          setSelectedCandIdx(parseInt(id.replace("cand_", ""), 10));
+          const idx = parseInt(id.replace("cand_", ""), 10);
+          setSelectedCandIdx(idx);
+          if (candidates[idx]) {
+            setToastMsg("\uD83C\uDF0D #" + (idx + 1) + " Aday Saha: " + candidates[idx].region_name.split("[")[0].trim());
+          }
         } else if (PRESET_CATALOG.some((p) => p.id === id)) {
+          const found = PRESET_CATALOG.find((p) => p.id === id);
           setSelectionMode("PRESET");
           setPresetId(id);
+          setToastMsg("\uD83C\uDFDB\uFE0F NASA Hedefi Se\u00E7ildi: " + found.name);
+        }
+      }
+
+      function switchTopArena(targetArena) {
+        if (targetArena === "Split") {
+          setSplit(true);
+          return;
+        }
+        setSplit(false);
+        setBody(targetArena);
+        if (targetArena === "Moon" || targetArena === "Mars") {
+          setDynBody(targetArena);
+          if (selectionMode === "PRESET") {
+            const curPreset = PRESET_CATALOG.find((p) => p.id === presetId);
+            if (!curPreset || curPreset.body !== targetArena) {
+              const firstForBody = PRESET_CATALOG.find((p) => p.body === targetArena);
+              if (firstForBody) setPresetId(firstForBody.id);
+            }
+          }
+          setToastMsg("\uD83D\uDEF0\uFE0F 3B " + targetArena + " K\u00FCresi Aktif: Y\u00FCzeyde istedi\u011Finiz yere t\u0131klayarak analiz edebilirsiniz!");
         }
       }
 
@@ -518,8 +608,16 @@
         : "NASA verisi";
 
       return h("div", { className: "app" },
+        toastMsg && h("div", {
+          style: {
+            position: "fixed", bottom: 22, left: "50%", transform: "translateX(-50%)", zIndex: 99,
+            background: "#133b33", border: "1px solid #6be5c4", color: "#dcfff4", padding: "10px 18px",
+            borderRadius: 8, fontWeight: 600, fontSize: 12.5, boxShadow: "0 8px 30px rgba(0,0,0,0.6)"
+          }
+        }, toastMsg),
+
         h("header", { className: "topbar" },
-          h("a", { className: "identity", href: "#!", onClick: (e) => { e.preventDefault(); setSplit(true); } },
+          h("a", { className: "identity", href: "#!", onClick: (e) => { e.preventDefault(); switchTopArena("Split"); } },
             h("span", { className: "brand-mark" }, "\uD83D\uDEF0\uFE0F"),
             h("span", null, "TERRA-TWIN", h("span", { className: "brand-sub" }, "NASA 2026 ANALOG SCREENING LAB ", h("b", null, "v7.0-AUDIT")))
           ),
@@ -528,19 +626,19 @@
               h("button", {
                 key: b,
                 className: !split && body === b ? "active" : "",
-                onClick: () => { setSplit(false); setBody(b); if (b !== "Earth") setDynBody(b); }
+                onClick: () => switchTopArena(b)
               },
                 h("span", { className: "planet-dot dot-" + b.toLowerCase() }),
                 label
               )
             ),
-            h("button", { className: split ? "active" : "", onClick: () => setSplit(true) },
+            h("button", { className: split ? "active" : "", onClick: () => switchTopArena("Split") },
               "\u2194 \u0130kili 3B K\u00FCre K\u0131yaslama"
             )
           ),
           h("div", { className: "top-status" },
             h("span", { className: "status-dot" }),
-            loading ? "SRTM 90m DEM & NASA POWER SORGULANIYOR..." : "P0-P3 DENET\u0130M UYUMLU \u00B7 COMMIT: " + (manifest?.git_commit_id || "v7.0")
+            loading ? "HESAPLANIYOR..." : "HEDEF: " + (targetProfile?.name || "").slice(0, 28)
           ),
           h("button", { className: "demo-button", onClick: () => setActiveTab(5) },
             "\u2B07 Kan\u0131t & G\u00F6rev Dosyas\u0131 \u0130ndir"
@@ -581,10 +679,9 @@
               )
             ),
             h("div", { className: "nav-group", style: { marginTop: "auto", borderTop: "1px solid #222e3c", paddingTop: 12, fontSize: 10.5, color: "#8fa6bc" } },
-              h("b", { style: { color: "#8ce9d0", display: "block", marginBottom: 4 } }, "\uD83D\uDEE1\uFE0F B\u0130L\u0130MSEL D\u00DCR\u00DCSTL\u00DCK KILAVUZU"),
-              "\u2022 Eksik veri asla tahmin edilmez (veri yok).", h("br"),
-              "\u2022 NASA POWER yaln\u0131zca D\u00FCnya ba\u011Flam\u0131d\u0131r.", h("br"),
-              "\u2022 Sonu\u00E7lar \u00F6n tarama ama\u00E7l\u0131d\u0131r, u\u00E7u\u015F/\u00FCs g\u00FCvenli\u011Fi kan\u0131t\u0131 de\u011Fildir."
+              h("b", { style: { color: "#8ce9d0", display: "block", marginBottom: 4 } }, "\uD83D\uDEE1\uFE0F NASIL KULLANILIR?"),
+              "\u2022 3B Ay veya Mars k\u00FCresinde istedi\u011Finiz kratere t\u0131klay\u0131n.", h("br"),
+              "\u2022 Sistem t\u0131klanan koordinat\u0131 an\u0131nda yakalar ve en uygun 3 D\u00FCnya analogunu bulur."
             )
           ),
 
@@ -609,8 +706,8 @@
                       h("div", { className: "tt-field", style: { maxWidth: 120 } },
                         h("label", null, "G\u00D6K C\u0130SM\u0130"),
                         h("select", { value: dynBody, onChange: (e) => setDynBody(e.target.value) },
-                          h("option", { value: "Mars" }, "Mars"),
-                          h("option", { value: "Moon" }, "Moon (Ay)")
+                          h("option", { value: "Moon" }, "Moon (Ay)"),
+                          h("option", { value: "Mars" }, "Mars")
                         )
                       ),
                       h("div", { className: "tt-field", style: { maxWidth: 115 } },
@@ -631,14 +728,21 @@
                 )
               ),
 
-              selectionMode === "DYNAMIC" && h("div", { className: "tt-control-row" },
+              h("div", { className: "tt-control-row" },
                 h("div", { className: "tt-quick-btns" },
+                  h("span", { style: { fontSize: 10.5, color: "#8fa6bc", marginRight: 4 } }, "H\u0131zl\u0131 Koordinat Testi (Veya 3B K\u00FCreye T\u0131klay\u0131n):"),
                   QUICK_COORDS.map((q) =>
                     h("button", {
                       key: q.label,
-                      className: "tt-quick-btn " + (dynLat === q.lat && dynLon === q.lon ? "active" : ""),
-                      onClick: () => { setDynBody(q.body); setDynLat(q.lat); setDynLon(q.lon); runAnalysis({ selection_mode: "DYNAMIC", body: q.body, lat: q.lat, lon: q.lon }); }
-                    }, q.label + " (" + q.lat + "\u00B0, " + q.lon + "\u00B0)")
+                      className: "tt-quick-btn " + (selectionMode === "DYNAMIC" && dynBody === q.body && dynLat === q.lat && dynLon === q.lon ? "active" : ""),
+                      onClick: () => {
+                        setSelectionMode("DYNAMIC");
+                        setDynBody(q.body);
+                        setDynLat(q.lat);
+                        setDynLon(q.lon);
+                        setToastMsg("\uD83C\uDFAF " + q.label + " se\u00E7ildi!");
+                      }
+                    }, q.label)
                   )
                 )
               ),
@@ -710,9 +814,9 @@
             targetProfile && activeCand && h(React.Fragment, null,
               h("div", { className: "tt-telemetry-grid" },
                 h("div", { className: "tt-metric-card" },
-                  h("small", null, "\uD83D\uDCCB HEDEF VER\u0130 DURUMU (" + targetProfile.body.toUpperCase() + ")"),
-                  h("strong", null, targetProfile.data_status || "NASA verisinden i\u015Flendi"),
-                  h("span", null, targetProfile.lat + "\u00B0, " + targetProfile.lon + "\u00B0 \u00B7 Ayak \u0130zi: " + (radiusKm * 2).toFixed(0) + "\u00D7" + (radiusKm * 2).toFixed(0) + " km")
+                  h("small", null, "\uD83C\uDFAF SE\u00C7\u0130L\u0130 HEDEF (" + targetProfile.body.toUpperCase() + ")"),
+                  h("strong", null, targetProfile.name),
+                  h("span", null, "E\u011Fim: " + (targetProfile.cross_section?.mean_slope_deg ?? "N/A") + "\u00B0 | R\u00F6lyef: " + (targetProfile.cross_section?.relief_m ?? "N/A") + " m")
                 ),
                 h("div", { className: "tt-metric-card" },
                   h("small", null, "\uD83E\uDD47 #" + (selectedCandIdx + 1) + " \u00D6N TARAMA ADAY SAHASI"),
@@ -739,26 +843,26 @@
             h("div", { className: "scientific-workspace" },
               h("section", { className: "exploration-column" },
                 h("div", { className: "scene-frame" },
-                  loading && h("div", { className: "tt-loader" }, "\uD83D\uDEF0\uFE0F Kalibre Edilmi\u015F SRTM 90m DEM ve NASA POWER Sorgulan\u0131yor..."),
+                  loading && h("div", { className: "tt-loader" }, "\uD83D\uDEF0\uFE0F Hedef Koordinat Analiz Ediliyor..."),
                   h("div", { className: split ? "viewport-grid split" : "viewport-grid" },
                     h(PlanetViewport, {
                       body: split ? "Earth" : body,
-                      centerLat: (split || body === "Earth") ? (activeCand?.lat || 24) : (targetProfile?.lat || 18),
-                      centerLon: (split || body === "Earth") ? (activeCand?.lon || 8) : (targetProfile?.lon || 77),
+                      centerLat: (split || body === "Earth") ? (activeCand?.lat || 24) : (targetProfile?.lat || dynLat),
+                      centerLon: (split || body === "Earth") ? (activeCand?.lon || 8) : (targetProfile?.lon || dynLon),
                       imagery, grid, markers,
                       customMarkers: (split || body === "Earth") ? earthMarkers : targetMarkers,
-                      splitBridgeCoords: compSite && candidates[0] ? { fromLat: candidates[0].lat, fromLon: candidates[0].lon, toLat: compSite.lat, toLon: compSite.lon } : null,
-                      selectedId: (split || body === "Earth") ? "cand_" + selectedCandIdx : (targetProfile?.id || presetId),
+                      splitBridgeCoords: splitBridgeMemo,
+                      selectedId: (split || body === "Earth") ? "cand_" + selectedCandIdx : (selectionMode === "DYNAMIC" ? "DYNAMIC_PIN" : presetId),
                       onSelect: onMarkerSelect,
                       onGlobeClick
                     }),
                     split && h(PlanetViewport, {
-                      body: targetProfile?.body || "Moon",
-                      centerLat: targetProfile?.lat || 8,
-                      centerLon: targetProfile?.lon || 33,
+                      body: activeTargetBody,
+                      centerLat: targetProfile?.lat || dynLat,
+                      centerLon: targetProfile?.lon || dynLon,
                       imagery, grid, markers,
                       customMarkers: targetMarkers,
-                      selectedId: targetProfile?.id || presetId,
+                      selectedId: selectionMode === "DYNAMIC" ? "DYNAMIC_PIN" : presetId,
                       onSelect: onMarkerSelect,
                       onGlobeClick
                     })
@@ -798,7 +902,7 @@
                       h("b", { style: { color: "#00d4ff", display: "block", marginBottom: 6 } }, "HEDEF G\u00D6RSEL BA\u011ELAMI: " + targetProfile.name),
                       h("img", { src: showHud ? targetProfile.hud_data_url : targetProfile.rgb_data_url }),
                       h("div", { style: { marginTop: 8, fontSize: 10.5, color: "#b0c4d4" } },
-                        "\u2022 Kaynak: " + (targetProfile.physical_measurements?.measurement_source || "NASA") + " | Durum: " + targetProfile.data_status
+                        "\u2022 Kaynak: " + (targetProfile.physical_measurements?.measurement_source || "NASA") + " | E\u011Fim: " + (targetProfile.cross_section?.mean_slope_deg ?? "N/A") + "\u00B0 | R\u00F6lyef: " + (targetProfile.cross_section?.relief_m ?? "N/A") + " m"
                       )
                     ),
                     h("div", { className: "tt-hud-box" },
