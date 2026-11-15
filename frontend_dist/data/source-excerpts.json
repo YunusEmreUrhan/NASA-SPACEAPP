@@ -1,0 +1,26 @@
+[
+  {
+    "id": "haughton",
+    "sourceUrl": "https://www.nasa.gov/?blogs-migration=hmp-2014-field-team-leaves-for-haughton-crater-tests",
+    "retrievedAt": "2026-11-14",
+    "excerpt": "cs; Jesse Weaver, Knoxville, TN; and locally Pauline Akeeagok from Grise Fjord. Haughton Crater is a 20-km diameter impact structure with well-preserved beds of ice-cemented impact breccia, and is considered an excellent-fidelity Mars-analog site. Team members will gather gas samples to acquire more data on concentration and carbon isotopic composition for both methane and carbon dioxide collected from sniffer drill strings, for assessing both the flux and source of background methane emission from bedrock in the Arctic. A new rotary-percussive planetary-prototype drill wil",
+    "observationKind": "Published characterization, manually transcribed; not a new measurement",
+    "formalUncertainty": null
+  },
+  {
+    "id": "shackleton",
+    "sourceUrl": "https://science.nasa.gov/image-article/apod-2023-may-5-shackleton-from-shadowcam/",
+    "retrievedAt": "2026-11-14",
+    "excerpt": "on from ShadowCam Explanation: Shackleton crater lies at the lunar south pole . Peaks along the rim of the 21 kilometer diameter crater are in sunlight, but Shackleton\u2019s floor is in dark permanent shadow . Still, this image of the shadowed rim wall and floor of Shackleton crater was captured from NASA\u2019s ShadowCam , an instrument on board the Korea Pathfinder Lunar Orbiter (KPLO) launched in August 2022. About 200 times more sensitive than, for example, the Lunar Reconnaissance Orbiter\u2019s Narrow Angle Camera, ShadowCam was designed to image the permanently shadowed regions of",
+    "observationKind": "Published characterization, manually transcribed; not a new measurement",
+    "formalUncertainty": null
+  },
+  {
+    "id": "jezero",
+    "sourceUrl": "https://www.nasa.gov/news-release/nasa-announces-landing-site-for-mars-2020-rover/",
+    "retrievedAt": "2026-11-14",
+    "excerpt": "ically interesting landscapes Mars has to offer. Mission scientists believe the 28-mile-wide (45-kilometer) crater, once home to an ancient river delta, could have collected and preserved ancient organic molecules and other potential signs of microbial life from the water and sediments that flowed into the crater billions of years ago. Jezero Crater\u2019s ancient lake-delta system offers many promising sampling targets of at least five different kinds of rock, including clays and carbonates that have high potential to preserve signatures of past life. In addition, the material ",
+    "observationKind": "Published characterization, manually transcribed; not a new measurement",
+    "formalUncertainty": null
+  }
+]

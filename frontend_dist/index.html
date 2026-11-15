@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TERRA-TWIN | NASA 2026 3D Planetary Analog Lab</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.3.1",
+      "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+      "three": "https://esm.sh/three@0.170.0",
+      "three/addons/": "https://esm.sh/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="root">
+    <div style="padding:40px;text-align:center;color:#8ce9d0;font-family:monospace;">
+      TERRA-TWIN 3B Gezegen Motoru Baslatiliyor...
+    </div>
+  </div>
+  <script type="module">
+    import React, { useState, useEffect, useRef, useMemo } from "react";
+    import { createRoot } from "react-dom/client";
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const h = React.createElement;
+
+    const PRESET_CATALOG = [
+      { id: "MOON_MARE_TRANQUILLITATIS_PIT", body: "Moon", name: "Mare Tranquillitatis Pit (Lava Tube Skylight)", lat: 8.335, lon: 33.222 },
+      { id: "MOON_SHACKLETON_RIM", body: "Moon", name: "Shackleton Crater Rim (Lunar South Pole)", lat: -89.9, lon: 0.0 },
+      { id: "MOON_MARIUS_HILLS", body: "Moon", name: "Marius Hills Volcanic Dome & Rille", lat: 14.09, lon: -56.77 },
+      { id: "MARS_JEZERO_CRATER", body: "Mars", name: "Jezero Crater Paleo-Lake Delta (Mars 2020)", lat: 18.38, lon: 77.58 },
+      { id: "MARS_ARCADIA_PLANITIA", body: "Mars", name: "Arcadia Planitia Shallow Ice Sheet", lat: 39.2, lon: -188.0 },
+      { id: "MARS_ARSIA_MONS_CAVES", body: "Mars", name: "Arsia Mons Seven Sisters Skylight Pits", lat: -7.22, lon: -120.45 }
+    ];
+
+    const MISSION_MODES = [
+      { id: "HABITAT_LAVA_TUBE", label: "\uD83C\uDFF0 Yeralt\u0131 Bo\u015Fluk / Lav T\u00FCp\u00FC \u00D6n Taramas\u0131" },
+      { id: "ISRU_WATER_MINING", label: "\uD83E\uDDCA Kriyosferik Su Buzu (ISRU) \u00D6n Taramas\u0131" },
+      { id: "ROVER_LANDING_OPS", label: "\uD83D\uDE9C D\u00FC\u015F\u00FCk E\u011Fim (<5\u00B0) & Rover Trafik \u00D6n Taramas\u0131" },
+      { id: "BALANCED", label: "\u2696\uFE0F Dengeli \u00C7ok Boyutlu \u00D6n Tarama (Balanced)" },
+      { id: "CUSTOM", label: "\uD83C\uDF9B\uFE0F Manuel Senaryo A\u011F\u0131rl\u0131klar\u0131 (6B Duyarl\u0131l\u0131k)" }
+    ];
+
+    const QUICK_COORDS = [
+      { label: "\uD83C\uDF0B Valles Marineris", body: "Mars", lat: -13.8, lon: -61.2 },
+      { label: "\u2744\uFE0F Korolev Buzulu", body: "Mars", lat: 72.8, lon: 164.5 },
+      { label: "\u26F0\uFE0F Olympus Mons", body: "Mars", lat: 18.65, lon: -133.8 },
+      { label: "\uD83C\uDF11 Syrtis Major", body: "Mars", lat: 8.4, lon: 69.5 },
+      { label: "\uD83C\uDF15 Tycho Krateri (Ay)", body: "Moon", lat: -43.31, lon: -11.36 }
+    ];
+
+    function statusBadgeClass(lbl) {
+      if (!lbl) return "status-pill status-sim";
+      const s = String(lbl);
+      if (s.indexOf("NASA") !== -1) return "status-pill status-nasa";
+      if (s.indexOf("veri yok") !== -1) return "status-pill status-miss";
+      return "status-pill status-sim";
+    }
+
+    function geographicPosition(lat, lon, radius = 2) {
+      const phi = THREE.MathUtils.degToRad(90 - lat);
+      const theta = THREE.MathUtils.degToRad(lon + 180);
+      return new THREE.Vector3(
+        -radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+      );
+    }
+
+    function vectorToGeographic(point) {
+      const r = point.length() || 1;
+      const sinLat = Math.max(-1, Math.min(1, point.y / r));
+      const lat = THREE.MathUtils.radToDeg(Math.asin(sinLat));
+      const thetaDeg = (THREE.MathUtils.radToDeg(Math.atan2(point.z, -point.x)) + 360) % 360;
+      const lon = thetaDeg - 180;
+      return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+    }
+
+    function triggerDownload(content, mime, filename) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function PlanetViewport({ body, centerLat, centerLon, imagery, grid, markers, customMarkers, splitBridgeCoords, selectedId, onSelect, onGlobeClick }) {
+      const hostRef = useRef(null);
+      const apiRef = useRef(null);
+      const [hoverCoords, setHoverCoords] = useState(null);
+      const latest = useRef({ imagery, grid, markers, selectedId, onSelect, onGlobeClick });
+      latest.current = { imagery, grid, markers, selectedId, onSelect, onGlobeClick };
+
+      useEffect(() => {
+        const container = hostRef.current;
+        if (!container) return;
+        let renderer;
+        try {
+          renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        } catch (err) { return; }
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+        const initPos = geographicPosition(centerLat || 20, centerLon || 10, 5.8);
+        camera.position.copy(initPos);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 2.6;
+        controls.maxDistance = 12;
+
+        scene.add(new THREE.AmbientLight(0xb5c8de, 2.0));
+        const sun = new THREE.DirectionalLight(0xffffff, 2.8);
+        sun.position.set(-4, 6, 8);
+        scene.add(sun);
+
+        const geo = new THREE.SphereGeometry(2, 96, 64);
+        const mat = new THREE.MeshStandardMaterial({ color: body === "Mars" ? 0xbb795b : 0xffffff, roughness: 0.95 });
+        const globe = new THREE.Mesh(geo, mat);
+        scene.add(globe);
+
+        let disposed = false;
+        let loadedTex = null;
+        const texUrl = body === "Earth" ? "/textures/earth-gibs.jpg" : "/textures/" + body.toLowerCase() + ".jpg";
+        new THREE.TextureLoader().load(texUrl, (t) => {
+          if (disposed) { t.dispose(); return; }
+          loadedTex = t;
+          t.colorSpace = THREE.SRGBColorSpace;
+          t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          mat.map = latest.current.imagery ? t : null;
+          mat.color.set(0xffffff);
+          mat.needsUpdate = true;
+        });
+
+        const lines = new THREE.Group();
+        const gridMat = new THREE.LineBasicMaterial({ color: 0x8ac6d9, transparent: true, opacity: 0.16, depthWrite: false });
+        for (let lat = -60; lat <= 60; lat += 30) {
+          const p = [];
+          for (let lon = -180; lon <= 180; lon += 3) p.push(geographicPosition(lat, lon, 2.006));
+          lines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p), gridMat));
+        }
+        for (let lon = 0; lon < 360; lon += 30) {
+          const p = [];
+          for (let lat = -90; lat <= 90; lat += 3) p.push(geographicPosition(lat, lon, 2.006));
+          lines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p), gridMat));
+        }
+        scene.add(lines);
+
+        const markerGroup = new THREE.Group();
+        scene.add(markerGroup);
+        const markerMeshes = [];
+        const labelElements = [];
+        const markerGeo = new THREE.SphereGeometry(0.032, 14, 14);
+        const ringGeo = new THREE.RingGeometry(0.05, 0.068, 36);
+
+        (customMarkers || []).forEach((item) => {
+          const col = item.colorHex || 0x72f2ca;
+          const mMat = new THREE.MeshBasicMaterial({ color: col });
+          const rMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+          const pos = geographicPosition(item.lat, item.lon, 2.026);
+          const mesh = new THREE.Mesh(markerGeo, mMat);
+          mesh.position.copy(pos);
+          mesh.userData.id = item.id;
+          markerGroup.add(mesh);
+          markerMeshes.push(mesh);
+
+          const ring = new THREE.Mesh(ringGeo, rMat);
+          ring.position.copy(pos.clone().multiplyScalar(1.002));
+          ring.lookAt(pos.clone().multiplyScalar(2));
+          markerGroup.add(ring);
+
+          const el = document.createElement("button");
+          el.className = "globe-label";
+          el.textContent = item.badge ? item.badge + " " + item.name : item.name;
+          el.onclick = (ev) => { ev.stopPropagation(); latest.current.onSelect && latest.current.onSelect(item.id); };
+          container.appendChild(el);
+          labelElements.push({ el, pos, id: item.id });
+        });
+
+        if (body === "Earth" && splitBridgeCoords) {
+          const pStart = geographicPosition(splitBridgeCoords.fromLat, splitBridgeCoords.fromLon, 2.02);
+          const pEnd = geographicPosition(splitBridgeCoords.toLat, splitBridgeCoords.toLon, 2.02);
+          const arcPts = [];
+          for (let i = 0; i <= 48; i++) {
+            const t = i / 48;
+            const interp = new THREE.Vector3().lerpVectors(pStart, pEnd, t).normalize();
+            arcPts.push(interp.multiplyScalar(2.02 + Math.sin(t * Math.PI) * 0.14));
+          }
+          markerGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPts), new THREE.LineBasicMaterial({ color: 0x00f5d4 })));
+        }
+
+        apiRef.current = {
+          focus: () => { camera.position.copy(geographicPosition(centerLat || 20, centerLon || 10, 4.8)); controls.update(); },
+          zoom: (f) => { camera.position.multiplyScalar(f).clampLength(2.7, 12); controls.update(); },
+          reset: () => { camera.position.copy(initPos); controls.update(); }
+        };
+
+        const ro = new ResizeObserver(() => {
+          const w = container.clientWidth, h = container.clientHeight;
+          renderer.setSize(w, h);
+          camera.aspect = w / Math.max(h, 1);
+          camera.updateProjectionMatrix();
+        });
+        ro.observe(container);
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let sx = 0, sy = 0;
+        const onDown = (e) => { sx = e.clientX; sy = e.clientY; };
+        const onMove = (e) => {
+          const b = renderer.domElement.getBoundingClientRect();
+          pointer.set(((e.clientX - b.left) / b.width) * 2 - 1, (-(e.clientY - b.top) / b.height) * 2 + 1);
+          raycaster.setFromCamera(pointer, camera);
+          const hit = raycaster.intersectObject(globe)[0];
+          setHoverCoords(hit ? vectorToGeographic(hit.point) : null);
+        };
+        const onUp = (e) => {
+          if (Math.hypot(e.clientX - sx, e.clientY - sy) > 5) return;
+          const b = renderer.domElement.getBoundingClientRect();
+          pointer.set(((e.clientX - b.left) / b.width) * 2 - 1, (-(e.clientY - b.top) / b.height) * 2 + 1);
+          raycaster.setFromCamera(pointer, camera);
+          const hitM = raycaster.intersectObjects(markerMeshes)[0];
+          if (hitM && latest.current.onSelect) { latest.current.onSelect(hitM.object.userData.id); return; }
+          const hitG = raycaster.intersectObject(globe)[0];
+          if (hitG && latest.current.onGlobeClick) {
+            const c = vectorToGeographic(hitG.point);
+            latest.current.onGlobeClick(body, c.lat, c.lon);
+          }
+        };
+
+        renderer.domElement.addEventListener("pointerdown", onDown);
+        renderer.domElement.addEventListener("pointermove", onMove);
+        renderer.domElement.addEventListener("pointerup", onUp);
+
+        let frameId = 0;
+        const animate = () => {
+          if (disposed) return;
+          controls.update();
+          lines.visible = latest.current.grid;
+          markerGroup.visible = latest.current.markers;
+          if (mat.map !== (latest.current.imagery ? loadedTex : null)) {
+            mat.map = latest.current.imagery ? loadedTex : null;
+            mat.needsUpdate = true;
+          }
+          const camDir = camera.position.clone().normalize();
+          labelElements.forEach(({ el, pos, id }) => {
+            const vis = latest.current.markers && pos.clone().normalize().dot(camDir) > 0.22;
+            el.style.display = vis ? "block" : "none";
+            if (vis) {
+              const p = pos.clone().project(camera);
+              el.style.left = ((p.x * 0.5 + 0.5) * container.clientWidth) + "px";
+              el.style.top = ((-p.y * 0.5 + 0.5) * container.clientHeight) + "px";
+              el.classList.toggle("selected", id === latest.current.selectedId);
+            }
+          });
+          renderer.render(scene, camera);
+          frameId = requestAnimationFrame(animate);
+        };
+        animate();
+
+        return () => {
+          disposed = true;
+          cancelAnimationFrame(frameId);
+          ro.disconnect();
+          controls.dispose();
+          labelElements.forEach((x) => x.el.remove());
+          renderer.dispose();
+          renderer.domElement.remove();
+        };
+      }, [body, centerLat, centerLon, customMarkers, splitBridgeCoords]);
+
+      return h("div", { className: "planet-viewport" },
+        h("div", { className: "planet-canvas", ref: hostRef }),
+        h("div", { className: "viewport-caption" },
+          h("span", { className: "status-dot" }),
+          body === "Earth" ? "3B D\u00DCNYA ANALOG K\u00DCRES\u0130 (11,469 H\u00DCCRE)" : "3B " + body.toUpperCase() + " Y\u00DCZEY K\u00DCRES\u0130",
+          hoverCoords && h("span", { style: { marginLeft: 10, color: "#8ce9d0", fontWeight: 600 } },
+            "\uD83C\uDFAF \u0130MLE\u00C7: " + hoverCoords.lat + "\u00B0, " + hoverCoords.lon + "\u00B0 (K\u00FCreye T\u0131kla)"
+          ),
+          h("span", { className: "view-mode" }, "3D GLOBE")
+        ),
+        h("div", { className: "viewport-tools" },
+          h("button", { title: "Odaklan", onClick: () => apiRef.current?.focus() }, "\u2316"),
+          h("button", { title: "Yak\u0131nla\u015Ft\u0131r", onClick: () => apiRef.current?.zoom(0.8) }, "+"),
+          h("button", { title: "Uzakla\u015Ft\u0131r", onClick: () => apiRef.current?.zoom(1.2) }, "\u2212"),
+          h("button", { title: "S\u0131f\u0131rla", onClick: () => apiRef.current?.reset() }, "\u21BA")
+        ),
+        h("div", { className: "viewport-bottom" },
+          h("span", null, body === "Earth" ? "NASA GIBS \u00B7 SRTM 90m DEM + NASA POWER" : "NASA TREK WMTS (G\u00F6rsel Ba\u011Flam)"),
+          h("span", null, "S\u00FCr\u00FCkle: D\u00F6nd\u00FCr \u00B7 Tekerlek: Yak\u0131nla\u015Ft\u0131r \u00B7 T\u0131kla: Koordinat Se\u00E7")
+        )
+      );
+    }
+
+    function RadarChart6D({ targetName, targetVec, candidates, compSite }) {
+      const size = 310, cx = 155, cy = 155, radius = 100;
+      const labels = ["1. Bazalt/Albedo", "2. E\u011Fim (<5\u00B0)", "3. Radyatif", "4. So\u011Fuk Tuzak", "5. Kurakl\u0131k", "6. R\u00F6lyef (m)"];
+      const pt = (i, v) => {
+        const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+        const r = Math.max(0, Math.min(1, v)) * radius;
+        return (cx + r * Math.cos(a)).toFixed(1) + "," + (cy + r * Math.sin(a)).toFixed(1);
+      };
+      const poly = (arr) => (arr || [0.5,0.5,0.5,0.5,0.5,0.5]).map((v, i) => pt(i, v)).join(" ");
+
+      return h("div", null,
+        h("svg", { viewBox: "0 0 " + size + " " + size, style: { width: "100%", maxHeight: 280 } },
+          [0.25, 0.5, 0.75, 1.0].map((lvl) =>
+            h("polygon", { key: lvl, points: [0,1,2,3,4,5].map((i) => pt(i, lvl)).join(" "), fill: "none", stroke: "#263544" })
+          ),
+          [0,1,2,3,4,5].map((i) => {
+            const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+            return h("g", { key: i },
+              h("line", { x1: cx, y1: cy, x2: cx + radius * Math.cos(a), y2: cy + radius * Math.sin(a), stroke: "#2b3d4f" }),
+              h("text", { x: cx + (radius + 28) * Math.cos(a), y: cy + (radius + 18) * Math.sin(a), fill: "#c2d4e6", fontSize: "9.5", textAnchor: "middle" }, labels[i])
+            );
+          }),
+          h("polygon", { points: poly(targetVec), fill: "rgba(0, 212, 255, 0.22)", stroke: "#00d4ff", strokeWidth: 2.4 }),
+          candidates[0] && h("polygon", { points: poly(candidates[0].features_6d), fill: "rgba(255, 159, 28, 0.18)", stroke: "#ff9f1c", strokeWidth: 2.2 }),
+          compSite?.features_6d && h("polygon", { points: poly(compSite.features_6d), fill: "none", stroke: "#00f5d4", strokeWidth: 1.8, strokeDasharray: "4 3" })
+        ),
+        h("div", { style: { display: "flex", gap: 12, justifyContent: "center", fontSize: 10.5, flexWrap: "wrap" } },
+          h("span", { style: { color: "#00d4ff" } }, "\u25CF HEDEF: " + (targetName || "").slice(0, 24)),
+          candidates[0] && h("span", { style: { color: "#ff9f1c" } }, "\u25CF #1: " + candidates[0].region_name.split("[")[0].trim()),
+          compSite && h("span", { style: { color: "#00f5d4" } }, "\u2508 \u0130kili Saha: " + compSite.complementary_region_name.split("[")[0].trim())
+        )
+      );
+    }
+
+    function CrossSectionChart2D({ target, cand }) {
+      const tCs = target?.cross_section;
+      const eCs = cand?.cross_section;
+      if (!tCs || !eCs) return null;
+      const w = 450, hSvg = 240, padL = 42, padR = 16, padT = 24, padB = 34;
+      const plotW = w - padL - padR, plotH = hSvg - padT - padB;
+      const tElev = tCs.elevation_m || [], eElev = eCs.elevation_m || [], dists = eCs.distances_km || [];
+      const maxElev = Math.max(10, ...tElev, ...eElev);
+      const maxDist = Math.max(1, ...(dists.length ? dists : [10]));
+      const makePath = (arr) => arr.map((v, i) => (i === 0 ? "M" : "L") + (padL + (i / Math.max(1, arr.length - 1)) * plotW).toFixed(1) + "," + (padT + plotH - (v / maxElev) * plotH).toFixed(1)).join(" ");
+      const bestKm = Number(eCs.best_base_km ?? maxDist / 2);
+      const bestIdx = Math.min(eElev.length - 1, Math.max(0, Math.round((bestKm / maxDist) * (eElev.length - 1))));
+      const bestX = padL + (bestIdx / Math.max(1, eElev.length - 1)) * plotW;
+      const bestY = padT + plotH - ((eElev[bestIdx] || 0) / maxElev) * plotH;
+
+      return h("div", null,
+        h("svg", { viewBox: "0 0 " + w + " " + hSvg, style: { width: "100%", maxHeight: 270 } },
+          [0, 0.25, 0.5, 0.75, 1].map((f) => {
+            const y = padT + plotH - f * plotH;
+            return h("g", { key: f },
+              h("line", { x1: padL, y1: y, x2: w - padR, y2: y, stroke: "#233240" }),
+              h("text", { x: padL - 6, y: y + 3, fill: "#9ab0c4", fontSize: "9", textAnchor: "end" }, Math.round(f * maxElev) + "m")
+            );
+          }),
+          tCs.mean_slope_deg !== null && h("path", { d: makePath(tElev), fill: "none", stroke: "#00d4ff", strokeWidth: 2.2 }),
+          eCs.mean_slope_deg !== null && h("path", { d: makePath(eElev), fill: "none", stroke: "#ff9f1c", strokeWidth: 2.2 }),
+          h("circle", { cx: bestX, cy: bestY, r: 5.5, fill: "#00f5d4", stroke: "#fff", strokeWidth: 1.5 }),
+          h("text", { x: bestX, y: Math.max(14, bestY - 8), fill: "#00f5d4", fontSize: "9.5", textAnchor: "middle" }, "\u2605 D\u00DC\u015E\u00DCK E\u011E\u0130M PENCERES\u0130 (" + bestKm + " km)"),
+          h("text", { x: w / 2, y: hSvg - 6, fill: "#9ab0c4", fontSize: "9", textAnchor: "middle" }, "Taktik Kesit Mesafesi (0 \u2014 " + maxDist.toFixed(0) + " km) \u00B7 " + (eCs.dem_source || "").slice(0, 44))
+        ),
+        h("div", { style: { display: "flex", gap: 14, justifyContent: "center", fontSize: 10.5, flexWrap: "wrap" } },
+          h("span", { style: { color: "#00d4ff" } }, "\u2501 " + target.body + " Hedef (E\u011Fim: " + (tCs.mean_slope_deg ?? "Veri Yok") + "\u00B0 | R\u00F6lyef: " + (tCs.relief_m ?? "Veri Yok") + " m)"),
+          h("span", { style: { color: "#ff9f1c" } }, "\u2501 D\u00FCnya SRTM 90m DEM (E\u011Fim: " + (eCs.mean_slope_deg ?? "Veri Yok") + "\u00B0 | <5\u00B0 Oran\u0131: %" + (eCs.safe_landing_pct ?? "N/A") + ")")
+        )
+      );
+    }
+
+    function App() {
+      const [body, setBody] = useState("Earth");
+      const [split, setSplit] = useState(true);
+      const [imagery, setImagery] = useState(true);
+      const [grid, setGrid] = useState(true);
+      const [markers, setMarkers] = useState(true);
+
+      const [selectionMode, setSelectionMode] = useState("PRESET");
+      const [presetId, setPresetId] = useState("MOON_MARE_TRANQUILLITATIS_PIT");
+      const [dynBody, setDynBody] = useState("Mars");
+      const [dynLat, setDynLat] = useState(-13.8);
+      const [dynLon, setDynLon] = useState(-61.2);
+      const [radiusKm, setRadiusKm] = useState(5.0);
+      const [missionMode, setMissionMode] = useState("HABITAT_LAVA_TUBE");
+      const [customWeights, setCustomWeights] = useState([0.25, 0.20, 0.15, 0.15, 0.10, 0.15]);
+      const [noveltyOnly, setNoveltyOnly] = useState(true);
+      const [minSepKm, setMinSepKm] = useState(450);
+
+      const [apiData, setApiData] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [selectedCandIdx, setSelectedCandIdx] = useState(0);
+      const [showHud, setShowHud] = useState(true);
+      const [activeTab, setActiveTab] = useState(1);
+
+      async function runAnalysis(overrides = {}) {
+        setLoading(true);
+        const payload = {
+          selection_mode: overrides.selection_mode ?? selectionMode,
+          preset_id: overrides.preset_id ?? presetId,
+          body: overrides.body ?? (selectionMode === "PRESET" ? (PRESET_CATALOG.find((p) => p.id === presetId)?.body || "Moon") : dynBody),
+          lat: overrides.lat ?? dynLat,
+          lon: overrides.lon ?? dynLon,
+          radius_km: overrides.radius_km ?? radiusKm,
+          mission_mode: overrides.mission_mode ?? missionMode,
+          custom_weights: overrides.custom_weights ?? customWeights,
+          novelty_only: overrides.novelty_only ?? noveltyOnly,
+          min_separation_km: overrides.min_separation_km ?? minSepKm
+        };
+        try {
+          const r = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const d = await r.json();
+          if (d && d.status === "ok") {
+            setApiData(d);
+            setSelectedCandIdx(0);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      useEffect(() => { runAnalysis(); }, [selectionMode, presetId, dynBody, radiusKm, missionMode, noveltyOnly, minSepKm]);
+
+      const targetProfile = apiData?.target;
+      const candidates = apiData?.primary_candidates || [];
+      const activeCand = candidates[selectedCandIdx] || candidates[0] || null;
+      const compSite = apiData?.complementary_split_site || null;
+      const shortlistPool = apiData?.shortlist_full_pool || [];
+      const xaiData = activeCand?.xai_explanation || apiData?.xai_primary || null;
+      const roadmap = apiData?.roadmap || [];
+      const sensitivity = apiData?.weight_sensitivity_analysis || null;
+      const manifest = apiData?.reproducibility_manifest || null;
+      const mdDossier = apiData?.markdown_dossier || "";
+
+      const earthMarkers = useMemo(() => {
+        const cols = [0xff006e, 0xff9f1c, 0xffbe0b];
+        const arr = candidates.map((c, i) => ({
+          id: "cand_" + i,
+          name: c.region_name.split("[")[0].trim(),
+          lat: c.lat,
+          lon: c.lon,
+          badge: "#" + (i + 1) + " (%" + c.total_match_pct + ")",
+          colorHex: cols[i] || 0x72f2ca
+        }));
+        if (compSite) {
+          arr.push({
+            id: "split_site",
+            name: compSite.complementary_region_name.split("[")[0].trim(),
+            lat: compSite.lat,
+            lon: compSite.lon,
+            badge: "\uD83E\uDDE9 \u0130kili Saha",
+            colorHex: 0x00f5d4
+          });
+        }
+        return arr;
+      }, [candidates, compSite]);
+
+      const targetMarkers = useMemo(() => {
+        const bName = targetProfile?.body || "Moon";
+        const arr = PRESET_CATALOG.filter((p) => p.body === bName).map((p) => ({
+          id: p.id,
+          name: p.name.split("(")[0].trim(),
+          lat: p.lat,
+          lon: p.lon,
+          badge: "\uD83C\uDFDB\uFE0F",
+          colorHex: p.id === presetId && selectionMode === "PRESET" ? 0x00d4ff : 0x9de9d3
+        }));
+        if (selectionMode === "DYNAMIC" && targetProfile) {
+          arr.push({
+            id: targetProfile.id,
+            name: targetProfile.body + " (" + targetProfile.lat + "\u00B0, " + targetProfile.lon + "\u00B0)",
+            lat: targetProfile.lat,
+            lon: targetProfile.lon,
+            badge: "\uD83C\uDFAF SE\u00C7\u0130L\u0130",
+            colorHex: 0xff006e
+          });
+        }
+        return arr;
+      }, [targetProfile, presetId, selectionMode]);
+
+      function onGlobeClick(clickedBody, lat, lon) {
+        if (clickedBody === "Moon" || clickedBody === "Mars") {
+          setSelectionMode("DYNAMIC");
+          setDynBody(clickedBody);
+          setDynLat(lat);
+          setDynLon(lon);
+          runAnalysis({ selection_mode: "DYNAMIC", body: clickedBody, lat, lon });
+        }
+      }
+
+      function onMarkerSelect(id) {
+        if (id.indexOf("cand_") === 0) {
+          setSelectedCandIdx(parseInt(id.replace("cand_", ""), 10));
+        } else if (PRESET_CATALOG.some((p) => p.id === id)) {
+          setSelectionMode("PRESET");
+          setPresetId(id);
+        }
+      }
+
+      const physScoreStr = activeCand && activeCand.measured_physical_similarity_pct !== null && activeCand.measured_physical_similarity_pct !== undefined
+        ? "%" + activeCand.measured_physical_similarity_pct + " (\u00B1%" + (activeCand.score_uncertainty_pct || 4.0) + ")"
+        : "E\u015Fli DEM Yok (Senaryo \u00D6n Taramas\u0131)";
+
+      const climateStatusLbl = (activeCand && activeCand.nasa_power_climate && activeCand.nasa_power_climate.status_label)
+        ? activeCand.nasa_power_climate.status_label
+        : "NASA verisi";
+
+      return h("div", { className: "app" },
+        h("header", { className: "topbar" },
+          h("a", { className: "identity", href: "#!", onClick: (e) => { e.preventDefault(); setSplit(true); } },
+            h("span", { className: "brand-mark" }, "\uD83D\uDEF0\uFE0F"),
+            h("span", null, "TERRA-TWIN", h("span", { className: "brand-sub" }, "NASA 2026 ANALOG SCREENING LAB ", h("b", null, "v7.0-AUDIT")))
+          ),
+          h("nav", { className: "planet-nav" },
+            [["Earth", "D\u00FCnya (3B)"], ["Moon", "Ay (3B)"], ["Mars", "Mars (3B)"]].map(([b, label]) =>
+              h("button", {
+                key: b,
+                className: !split && body === b ? "active" : "",
+                onClick: () => { setSplit(false); setBody(b); if (b !== "Earth") setDynBody(b); }
+              },
+                h("span", { className: "planet-dot dot-" + b.toLowerCase() }),
+                label
+              )
+            ),
+            h("button", { className: split ? "active" : "", onClick: () => setSplit(true) },
+              "\u2194 \u0130kili 3B K\u00FCre K\u0131yaslama"
+            )
+          ),
+          h("div", { className: "top-status" },
+            h("span", { className: "status-dot" }),
+            loading ? "SRTM 90m DEM & NASA POWER SORGULANIYOR..." : "P0-P3 DENET\u0130M UYUMLU \u00B7 COMMIT: " + (manifest?.git_commit_id || "v7.0")
+          ),
+          h("button", { className: "demo-button", onClick: () => setActiveTab(5) },
+            "\u2B07 Kan\u0131t & G\u00F6rev Dosyas\u0131 \u0130ndir"
+          )
+        ),
+
+        h("div", { className: "app-body" },
+          h("aside", { className: "sidebar" },
+            h("div", { className: "nav-group" },
+              h("label", null, "5 KARAR VE KANIT SEKMES\u0130"),
+              [
+                [1, "\uD83C\uDF0D 1. K\u00FCresel Ke\u015Fif & HUD Uydu"],
+                [2, "\uD83D\uDCD0 2. SI Kan\u0131t, Kesit & Duyarl\u0131l\u0131k"],
+                [3, "\uD83E\uDDEC 3. S\u00FCre\u00E7 & Astrobiyoloji Hipotezi"],
+                [4, "\u26A0\uFE0F 4. XAI S\u0131n\u0131rlar & Cihaz Testi"],
+                [5, "\uD83D\uDCC4 5. G\u00F6rev Raporu (.md/.json/.csv)"]
+              ].map(([id, lbl]) =>
+                h("button", {
+                  key: id,
+                  className: "side-link " + (activeTab === id ? "selected" : ""),
+                  onClick: () => setActiveTab(id)
+                }, lbl)
+              )
+            ),
+            h("div", { className: "nav-group" },
+              h("label", null, "3B K\u00DCRE KATMAN KONTROLLER\u0130"),
+              h("label", { className: "layer-toggle" },
+                h("span", null, "2K Y\u00FCzey Uydu G\u00F6rseli"),
+                h("input", { type: "checkbox", checked: imagery, onChange: (e) => setImagery(e.target.checked) })
+              ),
+              h("label", { className: "layer-toggle" },
+                h("span", null, "Enlem / Boylam Koordinat A\u011F\u0131"),
+                h("input", { type: "checkbox", checked: grid, onChange: (e) => setGrid(e.target.checked) })
+              ),
+              h("label", { className: "layer-toggle" },
+                h("span", null, "3B Analog & \u0130kili Saha Pinleri"),
+                h("input", { type: "checkbox", checked: markers, onChange: (e) => setMarkers(e.target.checked) })
+              )
+            ),
+            h("div", { className: "nav-group", style: { marginTop: "auto", borderTop: "1px solid #222e3c", paddingTop: 12, fontSize: 10.5, color: "#8fa6bc" } },
+              h("b", { style: { color: "#8ce9d0", display: "block", marginBottom: 4 } }, "\uD83D\uDEE1\uFE0F B\u0130L\u0130MSEL D\u00DCR\u00DCSTL\u00DCK KILAVUZU"),
+              "\u2022 Eksik veri asla tahmin edilmez (veri yok).", h("br"),
+              "\u2022 NASA POWER yaln\u0131zca D\u00FCnya ba\u011Flam\u0131d\u0131r.", h("br"),
+              "\u2022 Sonu\u00E7lar \u00F6n tarama ama\u00E7l\u0131d\u0131r, u\u00E7u\u015F/\u00FCs g\u00FCvenli\u011Fi kan\u0131t\u0131 de\u011Fildir."
+            )
+          ),
+
+          h("main", { className: "main" },
+            h("section", { className: "tt-control-panel" },
+              h("div", { className: "tt-control-row" },
+                h("div", { className: "tt-field", style: { maxWidth: 270 } },
+                  h("label", null, "1. HEDEF SE\u00C7\u0130M MODU"),
+                  h("select", { value: selectionMode, onChange: (e) => setSelectionMode(e.target.value) },
+                    h("option", { value: "PRESET" }, "\uD83C\uDFDB\uFE0F Kaynakl\u0131 NASA Hedef Katalo\u011Fu (6 Hedef)"),
+                    h("option", { value: "DYNAMIC" }, "\uD83C\uDFAF Serbest Koordinat & 3B K\u00FCre T\u0131klama")
+                  )
+                ),
+                selectionMode === "PRESET"
+                  ? h("div", { className: "tt-field", style: { flex: 2 } },
+                      h("label", null, "DO\u011ERULANMI\u015E NASA AY / MARS HEDEF\u0130 SE\u00C7\u0130N"),
+                      h("select", { value: presetId, onChange: (e) => setPresetId(e.target.value) },
+                        PRESET_CATALOG.map((p) => h("option", { key: p.id, value: p.id }, "[" + p.body.toUpperCase() + "] " + p.name + " (" + p.lat + "\u00B0, " + p.lon + "\u00B0)"))
+                      )
+                    )
+                  : h(React.Fragment, null,
+                      h("div", { className: "tt-field", style: { maxWidth: 120 } },
+                        h("label", null, "G\u00D6K C\u0130SM\u0130"),
+                        h("select", { value: dynBody, onChange: (e) => setDynBody(e.target.value) },
+                          h("option", { value: "Mars" }, "Mars"),
+                          h("option", { value: "Moon" }, "Moon (Ay)")
+                        )
+                      ),
+                      h("div", { className: "tt-field", style: { maxWidth: 115 } },
+                        h("label", null, "ENLEM (LAT \u00B0)"),
+                        h("input", { type: "number", step: "0.5", value: dynLat, onChange: (e) => setDynLat(Number(e.target.value)) })
+                      ),
+                      h("div", { className: "tt-field", style: { maxWidth: 115 } },
+                        h("label", null, "BOYLAM (LON \u00B0)"),
+                        h("input", { type: "number", step: "0.5", value: dynLon, onChange: (e) => setDynLon(Number(e.target.value)) })
+                      ),
+                      h("button", { className: "primary-button", onClick: () => runAnalysis() }, "Analiz Et")
+                    ),
+                h("div", { className: "tt-field", style: { flex: 1.4 } },
+                  h("label", null, "2. SENARYO \u00D6N TARAMA A\u011EIRLIK MODU"),
+                  h("select", { value: missionMode, onChange: (e) => setMissionMode(e.target.value) },
+                    MISSION_MODES.map((m) => h("option", { key: m.id, value: m.id }, m.label))
+                  )
+                )
+              ),
+
+              selectionMode === "DYNAMIC" && h("div", { className: "tt-control-row" },
+                h("div", { className: "tt-quick-btns" },
+                  QUICK_COORDS.map((q) =>
+                    h("button", {
+                      key: q.label,
+                      className: "tt-quick-btn " + (dynLat === q.lat && dynLon === q.lon ? "active" : ""),
+                      onClick: () => { setDynBody(q.body); setDynLat(q.lat); setDynLon(q.lon); runAnalysis({ selection_mode: "DYNAMIC", body: q.body, lat: q.lat, lon: q.lon }); }
+                    }, q.label + " (" + q.lat + "\u00B0, " + q.lon + "\u00B0)")
+                  )
+                )
+              ),
+
+              h("div", { className: "tt-filter-architecture" },
+                h("div", { className: "tt-param-box" },
+                  h("div", { className: "tt-param-header" },
+                    h("span", null, "3. SAHA KE\u015E\u0130F F\u0130LTRES\u0130 (NOVELTY FILTER)"),
+                    h("span", { className: "tt-param-badge" }, noveltyOnly ? "7,669 YEN\u0130 H\u00DCCRE" : "11,469 T\u00DCM H\u00DCCRELER")
+                  ),
+                  h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } },
+                    h("button", { className: "tt-quick-btn " + (noveltyOnly ? "active" : ""), onClick: () => setNoveltyOnly(true) }, "\uD83D\uDC8E Az Bilinen Yeni Sahalar"),
+                    h("button", { className: "tt-quick-btn " + (!noveltyOnly ? "active" : ""), onClick: () => setNoveltyOnly(false) }, "\uD83C\uDFDB\uFE0F Klasik Sahalar\u0131 Dahil Et")
+                  )
+                ),
+                h("div", { className: "tt-param-box" },
+                  h("div", { className: "tt-param-header" },
+                    h("span", null, "4. TAKT\u0130K AYAK \u0130Z\u0130 & DEM KES\u0130T ALANI"),
+                    h("span", { className: "tt-param-badge" }, (radiusKm * 2).toFixed(0) + " \u00D7 " + (radiusKm * 2).toFixed(0) + " km")
+                  ),
+                  h("div", { className: "tt-pill-group" },
+                    [[2.5, "5\u00D75 km"], [5.0, "10\u00D710 km"], [10.0, "20\u00D720 km"], [15.0, "30\u00D730 km"]].map(([rVal, rLbl]) =>
+                      h("button", { key: rVal, className: "tt-pill " + (radiusKm === rVal ? "active" : ""), onClick: () => setRadiusKm(rVal) }, rLbl)
+                    )
+                  )
+                ),
+                h("div", { className: "tt-param-box" },
+                  h("div", { className: "tt-param-header" },
+                    h("span", null, "5. M\u0130N. HAVZA AYRIM SINIRI (NMS)"),
+                    h("span", { className: "tt-param-badge" }, minSepKm + " km Ayr\u0131m")
+                  ),
+                  h("div", { className: "tt-pill-group" },
+                    [[200, "200 km"], [450, "450 km"], [650, "650 km"], [900, "900 km"]].map(([sepVal, sepLbl]) =>
+                      h("button", { key: sepVal, className: "tt-pill " + (minSepKm === sepVal ? "active" : ""), onClick: () => setMinSepKm(sepVal) }, sepLbl)
+                    )
+                  )
+                )
+              ),
+
+              missionMode === "CUSTOM" && h("div", { className: "tt-weights-grid" },
+                [
+                  "1. Litoloji & Albedo",
+                  "2. E\u011Fim (<5\u00B0 DEM)",
+                  "3. Radyatif Ba\u011Flam",
+                  "4. Su/Buz Ba\u011Flam\u0131",
+                  "5. Kurakl\u0131k/R\u00FCzgar",
+                  "6. Dikey R\u00F6lyef (m)"
+                ].map((lbl, idx) =>
+                  h("div", { className: "tt-weight-item", key: lbl },
+                    h("div", { style: { display: "flex", justifyContent: "space-between", color: "#d0e2f2" } },
+                      h("span", null, lbl),
+                      h("b", { style: { color: "#6be5c4" } }, "%" + Math.round(customWeights[idx] * 100))
+                    ),
+                    h("input", {
+                      type: "range", min: "0", max: "1", step: "0.05",
+                      value: customWeights[idx],
+                      onChange: (e) => {
+                        const next = [...customWeights];
+                        next[idx] = Number(e.target.value);
+                        setCustomWeights(next);
+                      },
+                      onMouseUp: () => runAnalysis({ custom_weights: customWeights })
+                    })
+                  )
+                )
+              )
+            ),
+
+            targetProfile && activeCand && h(React.Fragment, null,
+              h("div", { className: "tt-telemetry-grid" },
+                h("div", { className: "tt-metric-card" },
+                  h("small", null, "\uD83D\uDCCB HEDEF VER\u0130 DURUMU (" + targetProfile.body.toUpperCase() + ")"),
+                  h("strong", null, targetProfile.data_status || "NASA verisinden i\u015Flendi"),
+                  h("span", null, targetProfile.lat + "\u00B0, " + targetProfile.lon + "\u00B0 \u00B7 Ayak \u0130zi: " + (radiusKm * 2).toFixed(0) + "\u00D7" + (radiusKm * 2).toFixed(0) + " km")
+                ),
+                h("div", { className: "tt-metric-card" },
+                  h("small", null, "\uD83E\uDD47 #" + (selectedCandIdx + 1) + " \u00D6N TARAMA ADAY SAHASI"),
+                  h("strong", null, activeCand.region_name.split("[")[0].trim()),
+                  h("span", null, "\u00D6l\u00E7\u00FClm\u00FC\u015F Fiziksel: " + physScoreStr)
+                ),
+                h("div", { className: "tt-metric-card" },
+                  h("small", null, "\uD83D\uDCCA E\u015EL\u0130 VER\u0130 KAPSAMI & DUYARLILIK"),
+                  h("strong", null, "%" + activeCand.data_coverage_pct + " SI Kan\u0131t Kapsam\u0131"),
+                  h("span", null, "#1 S\u0131ralama Kararl\u0131l\u0131\u011F\u0131 (\u00B1%25 A\u011F\u0131rl\u0131k): %" + (sensitivity?.rank_1_stability_pct ?? 100))
+                ),
+                h("div", { className: "tt-metric-card" },
+                  h("small", null, "\uD83C\uDF21\uFE0F D\u00DCNYA SAHA \u0130KL\u0130M BA\u011ELAMI (SKORA KATILMAZ)"),
+                  h("strong", null, activeCand.nasa_power_climate?.mean_surface_temp_c !== null ? activeCand.nasa_power_climate?.mean_surface_temp_c + "\u00B0C | " + activeCand.nasa_power_climate?.precipitation_mm_day + " mm/g" : "Veri Yok"),
+                  h("span", null, "Durum: " + climateStatusLbl)
+                )
+              ),
+              h("div", { className: "tt-base-banner" },
+                h("b", null, "\uD83D\uDD2C ARA\u015ETIRMA \u00D6NCEL\u0130\u011E\u0130 VE \u00D6N TARAMA NOTU (" + targetProfile.name + "): "),
+                "Bu sistem u\u00E7u\u015F, ini\u015F veya kal\u0131c\u0131 \u00FCs g\u00FCvenli\u011Fi karar\u0131 vermez (P0 Madde 9). Fiziksel benzerlik yaln\u0131zca ayn\u0131 SI birimine sahip e\u015Fli DEM/boyut \u00F6l\u00E7\u00FCmlerinden (SRTM 90m vs LOLA/MOLA) hesaplan\u0131r; NASA POWER D\u00FCnya meteorolojisi ve g\u00F6rsel doku sinyali fiziksel skora kar\u0131\u015Ft\u0131r\u0131lmaz."
+              )
+            ),
+
+            h("div", { className: "scientific-workspace" },
+              h("section", { className: "exploration-column" },
+                h("div", { className: "scene-frame" },
+                  loading && h("div", { className: "tt-loader" }, "\uD83D\uDEF0\uFE0F Kalibre Edilmi\u015F SRTM 90m DEM ve NASA POWER Sorgulan\u0131yor..."),
+                  h("div", { className: split ? "viewport-grid split" : "viewport-grid" },
+                    h(PlanetViewport, {
+                      body: split ? "Earth" : body,
+                      centerLat: (split || body === "Earth") ? (activeCand?.lat || 24) : (targetProfile?.lat || 18),
+                      centerLon: (split || body === "Earth") ? (activeCand?.lon || 8) : (targetProfile?.lon || 77),
+                      imagery, grid, markers,
+                      customMarkers: (split || body === "Earth") ? earthMarkers : targetMarkers,
+                      splitBridgeCoords: compSite && candidates[0] ? { fromLat: candidates[0].lat, fromLon: candidates[0].lon, toLat: compSite.lat, toLon: compSite.lon } : null,
+                      selectedId: (split || body === "Earth") ? "cand_" + selectedCandIdx : (targetProfile?.id || presetId),
+                      onSelect: onMarkerSelect,
+                      onGlobeClick
+                    }),
+                    split && h(PlanetViewport, {
+                      body: targetProfile?.body || "Moon",
+                      centerLat: targetProfile?.lat || 8,
+                      centerLon: targetProfile?.lon || 33,
+                      imagery, grid, markers,
+                      customMarkers: targetMarkers,
+                      selectedId: targetProfile?.id || presetId,
+                      onSelect: onMarkerSelect,
+                      onGlobeClick
+                    })
+                  )
+                ),
+
+                h("div", { className: "section-tabs" },
+                  [
+                    [1, "\uD83C\uDF0D 1. K\u00FCresel Ke\u015Fif, 8 Adayl\u0131 Havuz & G\u00F6rsel Ba\u011Flam"],
+                    [2, "\uD83D\uDCD0 2. E\u015Fli SI Kan\u0131t Tablosu, DEM Kesiti & Duyarl\u0131l\u0131k Analizi"],
+                    [3, "\uD83E\uDDEC 3. Jeomorfolojik S\u00FCre\u00E7 & Astrobiyoloji Hipotezleri"],
+                    [4, "\u26A0\uFE0F 4. XAI Fiziksel S\u0131n\u0131rlar, Cihaz Testi & TRL Plan\u0131"],
+                    [5, "\uD83D\uDCC4 5. Tekrar \u00DCretilebilirlik Raporu (.md / .json / .csv)"]
+                  ].map(([id, title]) =>
+                    h("button", { key: id, className: activeTab === id ? "active" : "", onClick: () => setActiveTab(id) }, title)
+                  )
+                ),
+
+                activeTab === 1 && activeCand && targetProfile && h("div", null,
+                  h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 } },
+                    h("div", { className: "tt-quick-btns" },
+                      candidates.map((c, i) =>
+                        h("button", {
+                          key: c.grid_index,
+                          className: "tt-quick-btn " + (selectedCandIdx === i ? "active" : ""),
+                          onClick: () => setSelectedCandIdx(i)
+                        }, "#" + (i + 1) + " " + c.region_name.split("[")[0].trim() + " (" + (c.is_novel_discovery ? "\uD83D\uDC8E Yeni Ke\u015Fif" : "\uD83C\uDFDB\uFE0F Klasik") + ")")
+                      )
+                    ),
+                    h("label", { style: { display: "flex", gap: 7, alignItems: "center", color: "#9de9d3", fontSize: 11, cursor: "pointer" } },
+                      h("input", { type: "checkbox", checked: showHud, onChange: (e) => setShowHud(e.target.checked) }),
+                      "\uD83C\uDFAF DEM Kesit Hatt\u0131 & G\u00F6rsel ROI Katman\u0131 (HUD)"
+                    )
+                  ),
+                  h("div", { className: "tt-hud-grid" },
+                    h("div", { className: "tt-hud-box" },
+                      h("b", { style: { color: "#00d4ff", display: "block", marginBottom: 6 } }, "HEDEF G\u00D6RSEL BA\u011ELAMI: " + targetProfile.name),
+                      h("img", { src: showHud ? targetProfile.hud_data_url : targetProfile.rgb_data_url }),
+                      h("div", { style: { marginTop: 8, fontSize: 10.5, color: "#b0c4d4" } },
+                        "\u2022 Kaynak: " + (targetProfile.physical_measurements?.measurement_source || "NASA") + " | Durum: " + targetProfile.data_status
+                      )
+                    ),
+                    h("div", { className: "tt-hud-box" },
+                      h("b", { style: { color: "#ff9f1c", display: "block", marginBottom: 6 } }, "#" + (selectedCandIdx + 1) + " D\u00DCNYA ADAYI: " + activeCand.region_name),
+                      h("img", { src: showHud ? activeCand.hud_data_url : activeCand.rgb_data_url }),
+                      h("div", { style: { marginTop: 8, fontSize: 10.5, color: "#b0c4d4" } },
+                        "\u2022 G\u00F6rsel Ke\u015Fif Sinyali (Skora Kat\u0131lmaz): %" + activeCand.visual_hybrid_pct + " \u2014 " + activeCand.vision_engine_used
+                      )
+                    )
+                  ),
+                  h("div", { className: "evidence-table-wrap" },
+                    h("table", { className: "evidence-table" },
+                      h("thead", null, h("tr", null,
+                        h("th", null, "S\u0131ra"), h("th", null, "6B \u00D6n Eleme"), h("th", null, "Ke\u015Ffedilen D\u00FCnya B\u00F6lgesi"),
+                        h("th", null, "Koordinat"), h("th", null, "E\u015Fli DEM Benzerli\u011Fi"), h("th", null, "Veri Kapsam\u0131"), h("th", null, "G\u00F6rsel Sinyal (Ayr\u0131)")
+                      )),
+                      h("tbody", null,
+                        shortlistPool.map((item, idx) =>
+                          h("tr", { key: idx, onClick: () => idx < 3 && setSelectedCandIdx(idx), style: { cursor: idx < 3 ? "pointer" : "default" } },
+                            h("td", null, h("b", null, "#" + (idx + 1))),
+                            h("td", null, "#" + item.pre_rank),
+                            h("td", null, item.region_name),
+                            h("td", null, item.lat + "\u00B0, " + item.lon + "\u00B0"),
+                            h("td", null, h("b", { style: { color: "#8ce9d0" } }, "%" + item.final_score_pct)),
+                            h("td", null, "%" + (item.data_coverage_pct ?? 100)),
+                            h("td", null, "%" + item.visual_hybrid_pct + " (Bilgi Ama\u00E7l\u0131)")
+                          )
+                        )
+                      )
+                    )
+                  )
+                ),
+
+                activeTab === 2 && activeCand && targetProfile && h("div", null,
+                  h("div", { className: "tt-chart-grid" },
+                    h("div", { className: "tt-chart-box" },
+                      h("h4", { style: { marginBottom: 8 } }, "\uD83D\uDD78\uFE0F 6 Boyutlu Senaryo \u00D6n Tarama Profili (Senaryo Varsay\u0131m\u0131)"),
+                      h(RadarChart6D, { targetName: targetProfile.name, targetVec: targetProfile.features_6d, candidates, compSite })
+                    ),
+                    h("div", { className: "tt-chart-box" },
+                      h("h4", { style: { marginBottom: 8 } }, "\u26F0\uFE0F Kalibre Edilmi\u015F SRTM 90m DEM vs LOLA/MOLA Kesiti"),
+                      h(CrossSectionChart2D, { target: targetProfile, cand: activeCand })
+                    )
+                  ),
+                  h("h4", { style: { marginTop: 18, marginBottom: 6, color: "#e2eef8" } },
+                    "\uD83D\uDCCF E\u015Fli Fiziksel \u00D6l\u00E7\u00FCm ve Durum Etiketi Tablosu (Kapsam: %" + activeCand.data_coverage_pct + " | Fiziksel Uyum: " + physScoreStr + ")"
+                  ),
+                  h("div", { className: "evidence-table-wrap" },
+                    h("table", { className: "evidence-table" },
+                      h("thead", null, h("tr", null,
+                        h("th", null, "Fiziksel \u00D6l\u00E7\u00FCt"), h("th", null, "D\u00FCnya Sahas\u0131 (\u00B1Belirsizlik)"), h("th", null, targetProfile.body + " Hedefi (\u00B1Belirsizlik)"),
+                        h("th", null, "Birim"), h("th", null, "E\u015Fli Benzerlik (\u00B1Hata)"), h("th", null, "A\u011F\u0131rl\u0131k"), h("th", null, "Durum Etiketi (P0)"), h("th", null, "Veri Kayna\u011F\u0131")
+                      )),
+                      h("tbody", null,
+                        (activeCand.physical_evidence_table || []).map((r) =>
+                          h("tr", { key: r.criterion },
+                            h("td", null, h("b", null, r.criterion)),
+                            h("td", null, r.earth_measured),
+                            h("td", null, r.target_measured),
+                            h("td", null, r.unit),
+                            h("td", null, r.similarity_pct !== null ? h("b", { style: { color: "#8ce9d0" } }, "%" + r.similarity_pct + " (\u00B1%" + (r.uncertainty_pct || 4.0) + ")") : "Puanlanmaz (Ba\u011Flam / Veri Yok)"),
+                            h("td", null, r.weight),
+                            h("td", null, h("span", { className: statusBadgeClass(r.status_label) }, r.status_label)),
+                            h("td", null, r.source)
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  sensitivity && sensitivity.candidate_sensitivity && h("div", { style: { marginTop: 18 } },
+                    h("h4", { style: { marginBottom: 6, color: "#e2eef8" } },
+                      "\u2696\uFE0F A\u011F\u0131rl\u0131k Duyarl\u0131l\u0131k Analizi (Weight Sensitivity Analysis \u2014 P1 Madde 7)"
+                    ),
+                    h("p", { style: { fontSize: 11, color: "#9ab0c4", marginBottom: 8 } },
+                      sensitivity.perturbation_range + " \u2014 A\u011F\u0131rl\u0131klar \u00B1%25 de\u011Fi\u015Ftirildi\u011Finde #1 aday\u0131n birinci kalma oran\u0131: %" + sensitivity.rank_1_stability_pct
+                    ),
+                    h("div", { className: "evidence-table-wrap" },
+                      h("table", { className: "evidence-table" },
+                        h("thead", null, h("tr", null,
+                          h("th", null, "Aday Saha"), h("th", null, "Ortalama Skor"), h("th", null, "Min Skor"),
+                          h("th", null, "Maks Skor"), h("th", null, "Duyarl\u0131l\u0131k Aral\u0131\u011F\u0131 (Spread)"), h("th", null, "#1 S\u0131ra Kararl\u0131l\u0131\u011F\u0131")
+                        )),
+                        h("tbody", null,
+                          sensitivity.candidate_sensitivity.map((s) =>
+                            h("tr", { key: s.region_name },
+                              h("td", null, s.region_name),
+                              h("td", null, "%" + s.mean_perturbed_score_pct),
+                              h("td", null, "%" + s.min_perturbed_score_pct),
+                              h("td", null, "%" + s.max_perturbed_score_pct),
+                              h("td", null, "\u00B1%" + s.score_spread_pct),
+                              h("td", null, h("b", { style: { color: "#8ce9d0" } }, "%" + s.top1_retention_pct))
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                ),
+
+                activeTab === 3 && activeCand && h("div", { className: "tt-chart-grid" },
+                  h("div", { className: "tt-chart-box" },
+                    h("h4", { style: { marginBottom: 10 } }, "\uD83C\uDF0B Jeomorfolojik S\u00FCre\u00E7 \u00D6n Tarama \u0130ndeksleri (Senaryo Varsay\u0131m\u0131)"),
+                    Object.entries(activeCand.process_analogy?.process_breakdown || {}).map(([k, v]) =>
+                      h("div", { key: k, style: { marginBottom: 10 } },
+                        h("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 } },
+                          h("span", null, k), h("b", { style: { color: "#ff9f1c" } }, "%" + v)
+                        ),
+                        h("div", { style: { height: 6, background: "#1c2836", borderRadius: 3, overflow: "hidden" } },
+                          h("div", { style: { width: v + "%", height: "100%", background: "#ff9f1c" } })
+                        )
+                      )
+                    )
+                  ),
+                  h("div", { className: "tt-chart-box" },
+                    h("h4", { style: { marginBottom: 10 } }, "\uD83E\uDDEC Astrobiyoloji & Saha \u00D6rnekleme Hipotezi (Senaryo Varsay\u0131m\u0131)"),
+                    h("div", { className: "tt-split-box", style: { marginBottom: 12 } },
+                      h("b", null, "Literat\u00FCr Analog Mikrobiyom Hipotezi:"), h("br"), activeCand.astrobiology_profile?.extremophile_guild
+                    ),
+                    h("p", { style: { lineHeight: 1.75, fontSize: 11.5 } },
+                      "\u2022 Durum Etiketi: ", h("span", { className: "status-pill status-sim" }, "senaryo varsay\u0131m\u0131"), h("br"),
+                      "\u2022 D\u00FCnya Saha G\u00FCne\u015F Ak\u0131s\u0131 (NASA POWER): " + (activeCand.astrobiology_profile?.solar_irradiance_kwh_m2_day ?? "Veri Yok") + " kWh/m\u00B2/g\u00FCn", h("br"),
+                      "\u2022 Saha Notu: " + activeCand.astrobiology_profile?.astrobiology_mission_relevance
+                    )
+                  )
+                ),
+
+                activeTab === 4 && xaiData && h("div", null,
+                  (xaiData.breakdown_matrix || []).map((brk) =>
+                    h("div", { className: "tt-xai-card", key: brk.parameter },
+                      h("b", { style: { color: "#ff8589" } }, "\uD83D\uDEA8 " + brk.parameter + " \u2014 \u015Eiddet: " + brk.severity), h("br"),
+                      "Hedef: " + brk.target_value + " | D\u00FCnya: " + brk.earth_value, h("br"),
+                      "Fiziksel S\u0131n\u0131r: " + brk.impact, h("br"),
+                      h("span", { style: { color: "#00f5d4" } }, "\uD83D\uDEE0\uFE0F M\u00FChendislik Telafi Protokol\u00FC: " + brk.engineering_mitigation)
+                    )
+                  ),
+                  h("div", { className: "evidence-table-wrap" },
+                    h("table", { className: "evidence-table" },
+                      h("thead", null, h("tr", null, h("th", null, "TRL Kampanya Faz\u0131"), h("th", null, "Atanan Sahalar"), h("th", null, "\u00D6n Tarama ve Do\u011Frulama Hedefi"))),
+                      h("tbody", null,
+                        roadmap.map((rm) => h("tr", { key: rm.phase }, h("td", null, h("b", null, rm.phase)), h("td", null, rm.assigned_sites), h("td", null, rm.objective)))
+                      )
+                    )
+                  )
+                ),
+
+                activeTab === 5 && activeCand && targetProfile && h("div", null,
+                  h("div", { className: "export-grid" },
+                    h("button", { className: "export-btn", onClick: () => triggerDownload(mdDossier, "text/markdown", "TERRA_TWIN_Audit_Report_" + targetProfile.body + ".md") },
+                      h("div", null, h("b", { style: { color: "#8ce9d0", fontSize: 13 } }, "\uD83D\uDCC4 Bilimsel Denetim Raporu (.md)"), h("p", { style: { fontSize: 11, color: "#9ab0c4", marginTop: 4 } }, "Durum etiketleri, belirsizlik, duyarl\u0131l\u0131k analizi ve kaynak URL listesi")),
+                      h("span", { style: { fontSize: 18, color: "#8ce9d0" } }, "\u2B07")
+                    ),
+                    h("button", { className: "export-btn", onClick: () => triggerDownload(JSON.stringify(apiData, null, 2), "application/json", "TERRA_TWIN_Reproducible_Telemetry_" + targetProfile.body + ".json") },
+                      h("div", null, h("b", { style: { color: "#8ce9d0", fontSize: 13 } }, "\uD83D\uDCE6 Tekrar \u00DCretilebilir JSON Paketi (.json)"), h("p", { style: { fontSize: 11, color: "#9ab0c4", marginTop: 4 } }, "Commit ID (" + (manifest?.git_commit_id || "v7.0") + "), \u00FCr\u00FCn s\u00FCr\u00FCmleri ve ham \u00F6l\u00E7\u00FCmler")),
+                      h("span", { style: { fontSize: 18, color: "#8ce9d0" } }, "\u2B07")
+                    )
+                  ),
+                  h("pre", { style: { marginTop: 14, background: "#0b1017", border: "1px solid #253444", padding: 16, borderRadius: 8, maxHeight: 380, overflowY: "auto", fontSize: 11, lineHeight: 1.65, whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)" } }, mdDossier)
+                )
+              ),
+
+              h("aside", { className: "inspector" },
+                h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--font-mono)", fontSize: 10.5, color: "#9ab0c4" } },
+                  h("span", null, "ADAY SAHA KANIT KARTI"),
+                  h("span", { className: "tt-param-badge" }, "#" + (selectedCandIdx + 1) + " / " + candidates.length)
+                ),
+                activeCand && targetProfile && h(React.Fragment, null,
+                  h("div", {
+                    className: "site-image",
+                    style: { backgroundImage: "url(" + (showHud ? activeCand.hud_data_url : activeCand.rgb_data_url) + ")" }
+                  },
+                    h("span", null, activeCand.lat + "\u00B0, " + activeCand.lon + "\u00B0")
+                  ),
+                  h("div", null,
+                    h("span", { className: statusBadgeClass(activeCand.cross_section?.status_label) }, activeCand.cross_section?.status_label || "NASA verisinden i\u015Flendi"),
+                    h("h2", { style: { fontSize: 17, marginTop: 6, color: "#fff" } }, activeCand.region_name.split("[")[0].trim()),
+                    h("p", { style: { fontSize: 11, color: "#9ab0c4", marginTop: 3 } }, activeCand.strategic_role_badge)
+                  ),
+                  h("div", { className: "score-ring-box" },
+                    h("div", { className: "score-circle" },
+                      activeCand.measured_physical_similarity_pct !== null ? activeCand.measured_physical_similarity_pct.toFixed(1) : activeCand.total_match_pct.toFixed(1),
+                      h("small", null, "/ 100")
+                    ),
+                    h("div", { style: { fontSize: 11, lineHeight: 1.6 } },
+                      h("b", { style: { color: "#8ce9d0" } }, "Kapsam: %" + activeCand.data_coverage_pct), h("br"),
+                      "Belirsizlik: \u00B1%" + (activeCand.score_uncertainty_pct ?? "N/A"), h("br"),
+                      "SRTM E\u011Fim: " + (activeCand.cross_section?.mean_slope_deg ?? "Veri Yok") + "\u00B0 (\u00B10.5\u00B0)"
+                    )
+                  ),
+                  compSite && h("div", { className: "tt-split-box" },
+                    h("b", { style: { color: "#00f5d4", display: "block", marginBottom: 4 } }, "\uD83E\uDDE9 TAMAMLAYICI 2. SAHA (SPLIT-SITE)"),
+                    compSite.weakest_dimension_name + " boyutu i\u00E7in: " + compSite.complementary_region_name + " (%" + compSite.complementary_dim_match_pct + ")"
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    }
+
+    createRoot(document.getElementById("root")).render(h(App));
+  </script>
+</body>
+</html>

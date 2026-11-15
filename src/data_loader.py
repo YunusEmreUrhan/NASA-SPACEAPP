@@ -3,6 +3,7 @@ import csv
 import json
 import math
 import threading
+from datetime import datetime, timezone
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -16,6 +17,14 @@ try:
 except Exception:
     RG_CSV_PATH = None
 
+# P0 Madde 1: Zorunlu Veri Durum Etiketleri
+VALID_STATUS_LABELS = (
+    "NASA'dan al?nd?",
+    "NASA verisinden i?lendi",
+    "senaryo varsay?m?",
+    "sim?lasyon",
+    "veri yok"
+)
 
 COUNTRY_NAMES = {
     "DZ": "Algeria", "BO": "Bolivia", "JO": "Jordan", "SA": "Saudi Arabia",
@@ -36,14 +45,15 @@ COUNTRY_NAMES = {
 
 class PlanetaryDataLoader:
     """
-    Bilimsel Veri Denetimi (Data Audit) Uyumlu Veri Yükleyici:
-    - Sentetik görüntü (rng.normal) ve enlemden iklim tahmini (est_temp) KESİNLİKLE YOKTUR.
-    - Yükselti ve eğim RGB piksel parlaklığından değil, gerçek Copernicus GLO-90 / NASA SRTM 90m
-      Radar DEM API'sinden ve NASA Küresel Topografya/Batiyometri matrisinden metre (m) olarak çekilir.
-    - NASA POWER ALLSKY_SFC_SW_DWN verisi otomatik olarak W/m²'den kWh/m²/gün birimine dönüştürülür.
+    P0-P3 Bilimsel Veri Denetimi Uyumlu Veri Y?kleyici:
+    1) A? hatas?nda veya ?evrimd??? durumda ASLA kural tabanl?/sentetik say? ?retmez; 'veri yok' d?ner.
+    2) NASA Trek WMTS ve GIBS JPEG katmanlar?ndan fiziksel say? (e?im, r?lyef, ma?ara derinli?i) T?RETMEZ;
+       g?r?nt?leri yaln?zca 'g?rsel ba?lam (visual context)' olarak sunar.
+    3) Her ?l??m i?in kaynak URL, edinim zaman?, ?r?n/s?r?m, birim, koordinat/ayak izi ve kalite bayra?? ta??r.
     """
 
-    def __init__(self):
+    def __init__(self, offline_mode: bool = False):
+        self.offline_mode = offline_mode
         self.dirs = {
             "Moon": "data/raw_moon",
             "Mars": "data/raw_mars",
@@ -54,7 +64,7 @@ class PlanetaryDataLoader:
 
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "NASA-SpaceApps-PlanetaryAnalogEngine/6.0-ScientificAudit",
+            "User-Agent": "TERRA-TWIN-ScientificAudit/7.0",
             "Connection": "keep-alive"
         })
         retry = Retry(total=2, backoff_factor=0.2, status_forcelist=[429, 500, 502, 503, 504])
@@ -65,11 +75,6 @@ class PlanetaryDataLoader:
         self.cache_path = "metadata/telemetry_cache.json"
         self._cache_lock = threading.Lock()
         self.telemetry_cache = self._load_telemetry_cache()
-
-        self._global_topo_img = None
-        topo_path = "data/global_grids/nasa_gibs_topography.jpg"
-        if os.path.exists(topo_path):
-            self._global_topo_img = cv2.imread(topo_path, cv2.IMREAD_GRAYSCALE)
 
         self._geo_tree = None
         self._geo_records = []
@@ -97,46 +102,9 @@ class PlanetaryDataLoader:
             try:
                 with open(self.cache_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                if "dem_srtm" not in data:
-                    data["dem_srtm"] = {}
-                if "climate" not in data:
-                    data["climate"] = {}
-                if "geocode" not in data:
-                    data["geocode"] = {}
-
-                # Onbellekteki eski W/m² gunes akisi ve kutup geocode kayitlarini otomatik onar
-                dirty = False
-                for _, c_val in data["climate"].items():
-                    sw_v = c_val.get("solar_irradiance_kwh_m2_day")
-                    if sw_v is not None and float(sw_v) > 24.0:
-                        c_val["solar_irradiance_kwh_m2_day"] = round(float(sw_v) * 0.024, 2)
-                        dirty = True
-                    if "Live API" in c_val.get("source", "") and c_val.get("data_status") != "MEASURED_NASA_POWER":
-                        c_val["data_status"] = "MEASURED_NASA_POWER"
-                        dirty = True
-
-                for g_key in list(data["geocode"].keys()):
-                    try:
-                        la_s, lo_s = g_key.split("_")
-                        la, lo = float(la_s), float(lo_s)
-                        if la <= -60.0 and "Antarctica" not in data["geocode"][g_key]:
-                            data["geocode"][g_key] = f"Antarctic Polar Ice Sheet & Dry Valleys Sector, Antarctica ({la:.2f}°, {lo:.2f}°)"
-                            dirty = True
-                        elif 60.0 <= la <= 75.0 and -75.0 <= lo < -58.0 and "Greenland" in data["geocode"][g_key]:
-                            data["geocode"][g_key] = "Nunavut (Baffin Island), Canada [Canadian High-Arctic Permafrost Shield]"
-                            dirty = True
-                        elif data["geocode"][g_key].endswith(", BR"):
-                            data["geocode"][g_key] = data["geocode"][g_key].replace(", BR", ", Brazil")
-                            dirty = True
-                    except Exception:
-                        pass
-
-                if dirty:
-                    try:
-                        with open(self.cache_path, "w", encoding="utf-8") as wf:
-                            json.dump(data, wf, ensure_ascii=False, indent=2)
-                    except Exception:
-                        pass
+                for k in ("climate", "geocode", "dem_srtm"):
+                    if k not in data:
+                        data[k] = {}
                 return data
             except Exception:
                 pass
@@ -167,16 +135,19 @@ class PlanetaryDataLoader:
 
     def fetch_real_earth_dem_transect(self, lat: float, lon: float, radius_km: float = 5.0, num_samples: int = 11) -> dict:
         """
-        Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry API'sinden 10 km'lik çapraz kesit boyunca
-        gerçek ortometrik yükseklik (metre ASL) çeker; API hız limitinde yerel NASA GIBS ETOPO/SRTM
-        topografya matrisini kullanır.
+        P0 Madde 1 & 2: Yaln?zca kalibre edilmi? Copernicus GLO-90 / NASA SRTM 90m DEM servisinden
+        birimli (metre) y?kseklik ?eker. A? kapal?ysa veya servis yan?t vermezse g?rselden veya sin?s
+        e?risinden de?er UYDURMAZ; a??k?a status_label='veri yok' ve None d?ner.
         """
         key = f"{round(lat, 3)}_{round(lon, 3)}_{int(radius_km)}km"
-        with self._cache_lock:
-            if key in self.telemetry_cache.get("dem_srtm", {}):
-                cached = self.telemetry_cache["dem_srtm"][key]
-                if cached.get("elevations_m") and cached.get("relief_m", 0) > 0:
-                    return cached
+        if not self.offline_mode:
+            with self._cache_lock:
+                if key in self.telemetry_cache.get("dem_srtm", {}):
+                    cached = self.telemetry_cache["dem_srtm"][key]
+                    if cached.get("elevations_m") and len(cached["elevations_m"]) >= 5:
+                        cached["status_label"] = "NASA verisinden i?lendi"
+                        cached["data_status"] = "MEASURED_SRTM_DEM"
+                        return cached
 
         min_lon, min_lat, max_lon, max_lat = self._get_bbox(lat, lon, radius_km, body="Earth")
         sample_lons = np.linspace(min_lon, max_lon, num_samples)
@@ -186,96 +157,62 @@ class PlanetaryDataLoader:
         lon_str = ",".join([f"{x:.4f}" for x in sample_lons])
         url = f"https://api.open-meteo.com/v1/elevation?latitude={lat_str}&longitude={lon_str}"
 
-        try:
-            resp = self.session.get(url, timeout=(3.5, 5.0))
-            if resp.status_code == 200:
-                elevs = resp.json().get("elevation", [])
-                if elevs and len(elevs) == num_samples and all(e is not None for e in elevs):
-                    elev_arr = [round(float(e), 1) for e in elevs]
-                    if float(np.ptp(elev_arr)) < 2.0 and self._global_topo_img is not None:
-                        gh, gw = self._global_topo_img.shape
-                        cy = int(np.clip(((90.0 - lat) / 180.0) * gh, 2, gh - 3))
-                        cx = int(np.clip(((lon + 180.0) / 360.0) * gw, 2, gw - 3))
-                        local_patch = self._global_topo_img[cy - 2:cy + 3, cx - 2:cx + 3].astype(np.float32)
-                        basin_relief = max(18.0, float(np.ptp(local_patch)) * 12.5)
-                        ramp = np.sin(np.linspace(0, math.pi, num_samples)) * basin_relief
-                        elev_arr = [round(float(elev_arr[i] + ramp[i]), 1) for i in range(num_samples)]
+        if not self.offline_mode:
+            try:
+                resp = self.session.get(url, timeout=(3.0, 4.5))
+                if resp.status_code == 200:
+                    elevs = resp.json().get("elevation", [])
+                    valid_elevs = [float(e) for e in elevs if e is not None and float(e) > -500.0]
+                    if len(valid_elevs) == num_samples:
+                        elev_arr = [round(e, 1) for e in valid_elevs]
+                        res = {
+                            "elevations_m": elev_arr,
+                            "min_elev_m": round(float(np.min(elev_arr)), 1),
+                            "max_elev_m": round(float(np.max(elev_arr)), 1),
+                            "relief_m": round(float(np.ptp(elev_arr)), 1),
+                            "uncertainty_m": 8.0,
+                            "unit": "m",
+                            "valid_cell_ratio": 1.0,
+                            "footprint_km": round(radius_km * 2.0, 1),
+                            "product_version": "Copernicus DEM GLO-90 / NASA SRTM 90m v3.0",
+                            "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+                            "source_url": url,
+                            "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "quality_flag": "QF-1 (Valid DEM Transect, Nodata=0%)",
+                            "processing_step": "Diagonal 11-point orthometric elevation sampling along footprint",
+                            "status_label": "NASA verisinden i?lendi",
+                            "data_status": "MEASURED_SRTM_DEM"
+                        }
+                        with self._cache_lock:
+                            self.telemetry_cache["dem_srtm"][key] = res
+                            self._save_telemetry_cache()
+                        return res
+            except Exception:
+                pass
 
-                    res = {
-                        "elevations_m": elev_arr,
-                        "min_elev_m": round(float(np.min(elev_arr)), 1),
-                        "max_elev_m": round(float(np.max(elev_arr)), 1),
-                        "relief_m": round(float(np.ptp(elev_arr)), 1),
-                        "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-                        "data_status": "MEASURED_SRTM_DEM"
-                    }
-                    with self._cache_lock:
-                        self.telemetry_cache["dem_srtm"][key] = res
-                        self._save_telemetry_cache()
-                    return res
-        except Exception:
-            pass
-
-        if self._global_topo_img is not None:
-            gh, gw = self._global_topo_img.shape
-            cy = int(np.clip(((90.0 - lat) / 180.0) * gh, 4, gh - 5))
-            cx = int(np.clip(((lon + 180.0) / 360.0) * gw, 4, gw - 5))
-            row_vals = self._global_topo_img[cy, cx - 4:cx + 5].astype(np.float32)
-            elev_arr = [round(float(v * 14.0), 1) for v in np.interp(np.linspace(0, 8, num_samples), np.arange(9), row_vals)]
-            if float(np.ptp(elev_arr)) < 5.0:
-                elev_arr = [round(elev_arr[0] + float(np.sin(i * 0.5) * 28.0), 1) for i in range(num_samples)]
-            return {
-                "elevations_m": elev_arr,
-                "min_elev_m": round(float(np.min(elev_arr)), 1),
-                "max_elev_m": round(float(np.max(elev_arr)), 1),
-                "relief_m": round(float(np.ptp(elev_arr)), 1),
-                "source": "NASA GIBS Global Shaded-Relief / SRTM Baseline Grid",
-                "data_status": "MEASURED_SRTM_DEM"
-            }
-
+        # P0 Kabul ?l??t?: Servis ba?ar?s?zsa veya ?evrimd???ysa ASLA de?er uydurma!
         return {
             "elevations_m": None,
             "min_elev_m": None,
             "max_elev_m": None,
             "relief_m": None,
-            "source": "DEM Service Unreachable (No Synthetic Imputation)",
+            "uncertainty_m": None,
+            "unit": "m",
+            "valid_cell_ratio": 0.0,
+            "footprint_km": round(radius_km * 2.0, 1),
+            "product_version": "Copernicus GLO-90 / SRTM 90m",
+            "source": "DEM Service Unreachable (Zero Imputation)",
+            "source_url": url,
+            "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "quality_flag": "QF-0 (Missing / Network Error - Not Imputed)",
+            "processing_step": "Excluded from scoring due to missing DEM response",
+            "status_label": "veri yok",
             "data_status": "UNAVAILABLE"
         }
 
-    def _fetch_mars_mola_relief_patch(self, lat: float, lon: float, size: int = 512):
-        z = 5
-        n_rows = 2 ** z
-        n_cols = 2 ** (z + 1)
-        norm_lon = ((lon + 180.0) % 360.0) - 180.0
-        exact_col = ((norm_lon + 180.0) / 360.0) * n_cols
-        exact_row = ((90.0 - np.clip(lat, -89.9, 89.9)) / 180.0) * n_rows
-        tc = int(exact_col) % n_cols
-        tr = int(np.clip(exact_row, 0, n_rows - 1))
-
-        url = (
-            "https://trek.nasa.gov/tiles/Mars/EQ/"
-            f"Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0//default/default028mm/{z}/{tr}/{tc}.jpg"
-        )
-        try:
-            resp = self.session.get(url, timeout=(2.0, 3.5))
-            if resp.status_code == 200 and len(resp.content) > 800:
-                arr = np.frombuffer(resp.content, dtype=np.uint8)
-                img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-                if img is not None:
-                    fx = exact_col - int(exact_col)
-                    fy = exact_row - int(exact_row)
-                    h, w, _ = img.shape
-                    cx, cy = int(fx * w), int(fy * h)
-                    half = max(32, w // 4)
-                    x1 = int(np.clip(cx - half, 0, w - 2 * half))
-                    y1 = int(np.clip(cy - half, 0, h - 2 * half))
-                    sub = img[y1:y1 + 2 * half, x1:x1 + 2 * half]
-                    return cv2.cvtColor(cv2.resize(sub, (size, size), interpolation=cv2.INTER_CUBIC), cv2.COLOR_BGR2RGB)
-        except Exception:
-            pass
-        return None
-
     def _fetch_nasa_trek_wmts_mosaic(self, body_cap: str, lat: float, lon: float, size: int = 512):
+        if self.offline_mode:
+            return None
         z = 7
         n_rows = 2 ** z
         n_cols = 2 ** (z + 1)
@@ -335,13 +272,17 @@ class PlanetaryDataLoader:
         return cv2.resize(cropped, (size, size), interpolation=cv2.INTER_CUBIC)
 
     def fetch_planetary_patch(self, body: str, lat: float, lon: float, radius_km: float = 5.0, size: int = 512):
+        """
+        P0 Madde 5: NASA Trek WMTS karolar? YALNIZCA g?rsel ba?lam (visual context) i?in indirilir.
+        Karo yoksa s?f?r/sentetik g?r?nt? ?retilmez, bo? matris ve 'veri yok' d?ner.
+        """
         body_cap = "Moon" if body.lower() == "moon" else "Mars"
         cache_file = os.path.join(
             self.dirs[body_cap],
             f"{body_cap.lower()}_{lat:.3f}_{lon:.3f}_{int(radius_km)}km.jpg"
         )
 
-        if os.path.exists(cache_file):
+        if not self.offline_mode and os.path.exists(cache_file):
             img = cv2.imread(cache_file)
             if img is not None and img.size > 0:
                 return cv2.cvtColor(img, cv2.COLOR_BGR2RGB), cache_file
@@ -351,144 +292,116 @@ class PlanetaryDataLoader:
             cv2.imwrite(cache_file, cv2.cvtColor(trek_rgb, cv2.COLOR_RGB2BGR))
             return trek_rgb, cache_file
 
-        if abs(lat) <= 84.0:
-            z = 7
-            lat_rad = math.radians(lat)
-            n = 2.0 ** z
-            xtile = int((lon + 180.0) / 360.0 * n) % int(n)
-            ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
-            opm_name = "opm-moon-basemap-v0-1" if body_cap == "Moon" else "opm-mars-basemap-v0-1"
-            opm_url = f"https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/{opm_name}/all/{z}/{xtile}/{ytile}.png"
-            try:
-                resp = self.session.get(opm_url, timeout=(2.0, 3.5))
-                if resp.status_code == 200 and len(resp.content) > 1000:
-                    arr = np.frombuffer(resp.content, dtype=np.uint8)
-                    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-                    if img is not None:
-                        img_resized = cv2.resize(img, (size, size), interpolation=cv2.INTER_CUBIC)
-                        cv2.imwrite(cache_file, img_resized)
-                        return cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB), cache_file
-            except Exception:
-                pass
-
-        empty_rgb = np.zeros((size, size, 3), dtype=np.uint8)
-        return empty_rgb, ""
+        return np.zeros((size, size, 3), dtype=np.uint8), ""
 
     def extract_dynamic_target_profile(self, body: str, lat: float, lon: float, radius_km: float = 5.0):
         """
-        Dinamik seçilen Ay/Mars koordinatı için NASA MGS MOLA DEM ve LRO WAC / Viking MDIM21
-        verilerinden kalibre edilmiş fiziksel ölçümler çıkarır.
+        P0 Madde 2 & 5: Serbest se?ilen Ay/Mars koordinat? i?in WMTS JPEG karosunun renklerinden
+        e?im, r?lyef veya ma?ara derinli?i ?IKARMAZ!
+        Do?rudan ?l??m raster? y?kl? de?ilse alanlar? 'veri yok' b?rak?r; Stefan-Boltzmann hesab?n?
+        ise a??k?a 'senaryo varsay?m? / analitik model' olarak etiketler ve fiziksel ?l??m skoruna sokmaz.
         """
         rgb, img_path = self.fetch_planetary_patch(body, lat, lon, radius_km)
         body_cap = "Moon" if body.lower() == "moon" else "Mars"
-
-        mola_rgb = self._fetch_mars_mola_relief_patch(lat, lon, size=256) if body_cap == "Mars" else None
-        dem_source_img = mola_rgb if mola_rgb is not None else rgb
-        dem_gray = cv2.cvtColor(dem_source_img, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-
-        if body_cap == "Mars" and mola_rgb is not None and np.max(mola_rgb) > 0:
-            hsv = cv2.cvtColor(mola_rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
-            hue_smooth = cv2.GaussianBlur(hsv[:, :, 0], (15, 15), 4.0)
-            hue_norm = 1.0 - np.clip(hue_smooth / 150.0, 0.0, 1.0)
-            elev_grid_m = hue_norm * 1800.0
-            px_step_m = 463.0
-            gy_m, gx_m = np.gradient(elev_grid_m, px_step_m)
-            slope_grid_deg = np.degrees(np.arctan(np.hypot(gx_m, gy_m)))
-            measured_slope_deg = round(float(np.clip(np.mean(slope_grid_deg), 0.8, 18.5)), 2)
-            measured_relief_m = round(float(np.clip(np.percentile(elev_grid_m, 95) - np.percentile(elev_grid_m, 5), 45.0, 2800.0)), 1)
-            safe_pct = round(float(np.mean(slope_grid_deg <= 5.0) * 100.0), 1)
-        else:
-            gx = cv2.Sobel(dem_gray, cv2.CV_32F, 1, 0, ksize=3)
-            gy = cv2.Sobel(dem_gray, cv2.CV_32F, 0, 1, ksize=3)
-            grad_mag = np.hypot(gx, gy)
-            measured_slope_deg = round(float(np.clip(np.mean(grad_mag) * 12.0, 0.8, 22.0)), 2)
-            measured_relief_m = round(float(np.clip(np.std(dem_gray) * 1200.0, 40.0, 3500.0)), 1)
-            safe_pct = round(float(np.mean((grad_mag * 12.0) <= 5.0) * 100.0), 1)
-
-        opt_gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-        measured_albedo = round(float(np.clip(np.mean(opt_gray) * 0.35, 0.05, 0.32)), 3)
-
-        lap = np.abs(cv2.Laplacian(dem_gray, cv2.CV_32F, ksize=3))
-        void_depth_m = round(float(np.clip((np.percentile(lap, 96) - 0.12) * 240.0, 0.0, 130.0)), 1)
+        has_visual_tile = bool(img_path and np.max(rgb) > 0)
 
         lat_abs = abs(lat)
-        lat_norm = lat_abs / 90.0
         cos_lat = max(0.06, math.cos(math.radians(min(86.5, lat_abs))))
         sigma_sb = 5.670374419e-8
-        emissivity = 0.95
-        diurnal_eff_hours = 24.0 / math.pi  # Küresel gece-gündüz entegre güneşlenme faktörü (~7.64 saat/gün)
+        assumed_albedo = 0.12 if body_cap == "Moon" else 0.17
+        s0_wm2 = 1361.0 if body_cap == "Moon" else 589.0
+        t_eq_k = (((1.0 - assumed_albedo) * s0_wm2 * cos_lat) / (4.0 * sigma_sb * 0.95)) ** 0.25
+        if body_cap == "Mars":
+            t_eq_k += 5.5
+        mean_temp_c = round(float(t_eq_k - 273.15), 1)
 
-        if body_cap == "Moon":
-            s0_wm2 = 1361.0
-            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (4.0 * sigma_sb * emissivity)) ** 0.25
-            mean_temp_c = round(float(t_eq_k - 273.15), 1)
-            solar_kwh = round((s0_wm2 * cos_lat * diurnal_eff_hours * 0.68) / 1000.0, 2)
-            ice_wt = round(5.6 * float(np.clip((lat_abs - 72.0) / 18.0, 0.0, 1.0)), 2)
-            gravity_g, pressure_mbar, rad_msv = 0.165, 0.0, 400.0
-            missions = ["NASA LRO WAC Mosaic", "LRO LOLA Altimetry Model", "Stefan-Boltzmann Radiative Model"]
-            src_label = "TIER-2: NASA Trek LRO WAC + Stefan-Boltzmann Radiative Equilibrium"
-        else:
-            s0_wm2 = 589.0
-            t_eq_k = (((1.0 - measured_albedo) * s0_wm2 * cos_lat) / (4.0 * sigma_sb * emissivity)) ** 0.25
-            mean_temp_c = round(float(t_eq_k + 5.5 - 273.15), 1)
-            solar_kwh = round((s0_wm2 * cos_lat * diurnal_eff_hours) / 1000.0, 2)
-            ice_wt = round(45.0 * float(np.clip((lat_abs - 35.0) / 45.0, 0.0, 1.0)), 2)
-            gravity_g, pressure_mbar, rad_msv = 0.378, 6.1, 230.0
-            missions = ["NASA Trek Viking MDIM21", "MGS MOLA Hypsometric DEM", "Stefan-Boltzmann Radiative Model"]
-            src_label = "TIER-2: NASA Trek MGS MOLA Hypsometry + Stefan-Boltzmann Radiative Equilibrium"
-
+        # P0 Madde 5 Kabul ?l??t?: G?rsel karodan fiziksel e?im/r?lyef ?retilmez -> None ('veri yok')
         pm = {
-            "structure_diameter_km": round(radius_km * 2.0, 1),
+            "structure_diameter_km": None,
             "regional_basin_diameter_km": round(radius_km * 2.0, 1),
-            "mean_slope_deg": measured_slope_deg,
-            "safe_landing_pct": safe_pct,
-            "vertical_relief_m": measured_relief_m,
-            "bolometric_albedo": measured_albedo,
-            "subsurface_void_depth_m": void_depth_m,
-            "water_ice_wt_pct": ice_wt,
-            "solar_irradiance_kwh_m2_day": solar_kwh,
-            "measurement_source": src_label,
-            "official_url": "https://trek.nasa.gov/"
+            "mean_slope_deg": None,
+            "slope_uncertainty_deg": None,
+            "vertical_relief_m": None,
+            "relief_uncertainty_m": None,
+            "bolometric_albedo": None,
+            "measurement_source": (
+                "NASA Trek WMTS (Yaln?zca G?rsel Ba?lam ? Say?sal DEM Y?kl? De?il)"
+                if has_visual_tile else "WMTS Kapsamas? Yok / Veri Yok"
+            ),
+            "official_url": "https://trek.nasa.gov/",
+            "status_label": "senaryo varsay?m?"
         }
 
-        f0_basalt = round(max(0.15, min(0.96, 1.0 - (measured_albedo / 0.35))), 3)
-        f1_flatness = round(max(0.10, min(0.98, 1.0 - (measured_slope_deg / 20.0))), 3)
-        f2_thermal = round(max(0.25, min(0.98, 0.50 * min(1.0, solar_kwh / 8.0) + 0.50 * (0.65 + 0.35 * lat_norm))), 3)
-        f3_ice_isru = round(max(0.04, min(0.97, min(1.0, ice_wt / 10.0) * 0.75 + max(0.0, (lat_abs - 45.0) / 45.0) * 0.25)), 3)
-        f4_aeolian = round(max(0.15, min(0.95, (0.60 * f1_flatness + 0.40 * (1.0 - min(1.0, measured_relief_m / 1200.0))) * (1.0 - 0.5 * f3_ice_isru))), 3)
-        f5_subsurface = round(max(0.12, min(0.97, 0.55 * min(1.0, void_depth_m / 110.0) + 0.45 * min(1.0, measured_relief_m / 600.0))), 3)
+        observations = {
+            "feature_scale_km": {
+                "value": round(radius_km * 2.0, 1),
+                "uncertainty": 0.5,
+                "unit": "km",
+                "status_label": "senaryo varsay?m?",
+                "product": "Kullan?c? Se?imli ?nceleme Penceresi ?ap?",
+                "epoch": "N/A",
+                "quality_flag": "QF-3 (User Window Assumption)",
+                "source_url": "https://trek.nasa.gov/"
+            },
+            "mean_slope_deg": {
+                "value": None,
+                "uncertainty": None,
+                "unit": "deg",
+                "status_label": "veri yok",
+                "product": "Yerel LOLA/MOLA Say?sal DEM Sorgulanmad? (WMTS JPEG'den E?im T?retilmez)",
+                "epoch": "N/A",
+                "quality_flag": "QF-0 (Missing Paired DEM)",
+                "source_url": "https://trek.nasa.gov/"
+            },
+            "vertical_relief_m": {
+                "value": None,
+                "uncertainty": None,
+                "unit": "m",
+                "status_label": "veri yok",
+                "product": "Yerel LOLA/MOLA Say?sal DEM Sorgulanmad?",
+                "epoch": "N/A",
+                "quality_flag": "QF-0 (Missing Paired DEM)",
+                "source_url": "https://trek.nasa.gov/"
+            },
+            "surface_temp_k": {
+                "value": round(float(t_eq_k), 1),
+                "uncertainty": 15.0,
+                "unit": "K",
+                "status_label": "sim?lasyon",
+                "product": "1B Stefan-Boltzmann Enlemsel Radyatif Denge Modeli (NASA ?l??m? De?ildir)",
+                "epoch": "Analitik",
+                "quality_flag": "QF-3 (Analytical Simulation - Excluded from NASA Score)",
+                "source_url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/"
+            }
+        }
 
-        if f3_ice_isru >= 0.60:
-            primary_process = "Cryospheric Polar Ice Cap & Periglacial Cold-Trap Dynamics"
-            mission_focus = "Cryogenic Water-Ice Drilling (ISRU) & Polar Base Operations"
-        elif f5_subsurface >= 0.48:
-            primary_process = "Volcanic Caldera Collapse, Lava Tubes & Tectonic Chasma Canyons"
-            mission_focus = "Subsurface Cave/Canyon Radiation Shelter & Cliff-Bot Exploration"
-        elif f0_basalt >= 0.72 and f1_flatness >= 0.65:
-            primary_process = "Mafic Shield Volcanism & Dark Basaltic Mare/Plains Evolution"
-            mission_focus = "Basaltic Regolith ISRU (O2/3D Sintering) & Heavy Lander Pad"
-        else:
-            primary_process = "Aeolian Sedimentation & Paleo-Crater Basin Alteration"
-            mission_focus = "Autonomous Long-Range Rover Traverse & Astrobiology Sampling"
-
+        lat_norm = lat_abs / 90.0
+        ice_proxy = round(float(np.clip((lat_abs - 45.0) / 45.0, 0.05, 0.95)), 3)
         return {
             "id": f"DYNAMIC_{body_cap.upper()}_{lat:.2f}_{lon:.2f}",
             "body": body_cap,
-            "name": f"{body_cap} Region ({lat:.2f}°, {lon:.2f}°)",
+            "name": f"{body_cap} Serbest ?nceleme Noktas? ({lat:.2f}?, {lon:.2f}?)",
             "lat": round(lat, 3),
             "lon": round(lon, 3),
             "radius_km": radius_km,
-            "gravity_g": gravity_g,
-            "pressure_mbar": pressure_mbar,
+            "footprint_km": round(radius_km * 2.0, 1),
+            "coordinate_system": f"IAU {body_cap} 2000 Planetocentric",
+            "data_status": "senaryo varsay?m?",
+            "gravity_g": 0.165 if body_cap == "Moon" else 0.378,
+            "pressure_mbar": 0.0 if body_cap == "Moon" else 6.1,
             "mean_temp_c": mean_temp_c,
-            "radiation_msv_yr": rad_msv,
+            "radiation_msv_yr": 380.0 if body_cap == "Moon" else 230.0,
             "physical_measurements": pm,
-            "nasa_missions": missions,
-            "primary_process": primary_process,
-            "mission_focus": mission_focus,
+            "observations": observations,
+            "nasa_missions": ["NASA Trek WMTS (Visual Context Only)"],
+            "primary_process": "Kullan?c? Tan?ml? Koordinat ?n Taramas? (Senaryo Varsay?m?)",
+            "mission_focus": "Ara?t?rma ?nceli?i ?n Taramas? (Say?sal DEM E?le?mesi Yok)",
             "image_path": img_path,
-            "features_6d": [f0_basalt, f1_flatness, f2_thermal, f3_ice_isru, f4_aeolian, f5_subsurface],
-            "description": f"Measured via {src_label} at ({lat:.2f}°, {lon:.2f}°): Mean Slope {measured_slope_deg}°, Relief {measured_relief_m} m."
+            "features_6d": [0.65, 0.65, round(1.0 - 0.5 * lat_norm, 3), ice_proxy, 0.50, 0.50],
+            "description": (
+                f"[senaryo varsay?m?] Serbest koordinat ({lat:.2f}?, {lon:.2f}?). "
+                "WMTS g?r?nt? karosundan fiziksel e?im/r?lyef t?retilmemi?tir (veri yok)."
+            )
         }
 
     def fetch_earth_satellite_patch(self, lat: float, lon: float, radius_km: float = 5.0, size: int = 512):
@@ -497,113 +410,118 @@ class PlanetaryDataLoader:
             f"earth_{lat:.3f}_{lon:.3f}_{int(radius_km)}km.jpg"
         )
 
-        if os.path.exists(cache_file):
+        if not self.offline_mode and os.path.exists(cache_file):
             img = cv2.imread(cache_file)
             if img is not None and img.size > 0:
                 return cv2.cvtColor(img, cv2.COLOR_BGR2RGB), cache_file
 
-        min_lon, min_lat, max_lon, max_lat = self._get_bbox(lat, lon, radius_km, body="Earth")
-        export_url = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export"
-        params = {
-            "bbox": f"{min_lon},{min_lat},{max_lon},{max_lat}",
-            "bboxSR": "4326",
-            "imageSR": "4326",
-            "size": f"{size},{size}",
-            "format": "jpg",
-            "f": "image"
-        }
-
-        try:
-            resp = self.session.get(export_url, params=params, timeout=(2.0, 4.0))
-            if resp.status_code == 200 and len(resp.content) > 1500:
-                arr = np.frombuffer(resp.content, dtype=np.uint8)
-                img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-                if img is not None and img.size > 0:
-                    cv2.imwrite(cache_file, img)
-                    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB), cache_file
-        except Exception:
-            pass
-
-        bm_global = "data/global_grids/nasa_gibs_bluemarble.jpg"
-        if os.path.exists(bm_global):
-            g_img = cv2.imread(bm_global)
-            if g_img is not None:
-                gh, gw, _ = g_img.shape
-                cy = int(((90.0 - lat) / 180.0) * gh)
-                cx = int(((lon + 180.0) / 360.0) * gw)
-                half = 8
-                y1, y2 = max(0, cy - half), min(gh, cy + half)
-                x1, x2 = max(0, cx - half), min(gw, cx + half)
-                patch = cv2.resize(g_img[y1:y2, x1:x2], (size, size), interpolation=cv2.INTER_CUBIC)
-                cv2.imwrite(cache_file, patch)
-                return cv2.cvtColor(patch, cv2.COLOR_BGR2RGB), cache_file
+        if not self.offline_mode:
+            min_lon, min_lat, max_lon, max_lat = self._get_bbox(lat, lon, radius_km, body="Earth")
+            export_url = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export"
+            params = {
+                "bbox": f"{min_lon},{min_lat},{max_lon},{max_lat}",
+                "bboxSR": "4326",
+                "imageSR": "4326",
+                "size": f"{size},{size}",
+                "format": "jpg",
+                "f": "image"
+            }
+            try:
+                resp = self.session.get(export_url, params=params, timeout=(2.0, 4.0))
+                if resp.status_code == 200 and len(resp.content) > 1500:
+                    arr = np.frombuffer(resp.content, dtype=np.uint8)
+                    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                    if img is not None and img.size > 0:
+                        cv2.imwrite(cache_file, img)
+                        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB), cache_file
+            except Exception:
+                pass
 
         return np.zeros((size, size, 3), dtype=np.uint8), ""
 
     def fetch_nasa_power_climate(self, lat: float, lon: float):
         """
-        Gerçek NASA POWER Langley Satellite API sonuçlarını döner ve ALLSKY_SFC_SW_DWN
-        parametresini W/m²'den kWh/m²/gün birimine (x 0.024) çevirir.
+        P0 Madde 1 & 4: NASA POWER D?nya Klimatoloji API'si.
+        - D?nya'ya ait 2m/y?zey meteorolojik ba?lam verisidir; Ay/Mars y?zey s?cakl???yla do?rudan
+          e?de?er tutulamaz (yaln?zca D?nya saha ba?lam? olarak raporlan?r).
+        - A? hatas?nda veya ?evrimd??? durumda ASLA de?er uydurmaz; status_label='veri yok' d?ner.
         """
         key = f"{round(lat, 2)}_{round(lon, 2)}"
-        with self._cache_lock:
-            if key in self.telemetry_cache["climate"]:
-                cached = self.telemetry_cache["climate"][key]
-                if "Live API" in cached.get("source", ""):
-                    sw_c = cached.get("solar_irradiance_kwh_m2_day")
-                    if sw_c is not None and float(sw_c) > 24.0:
-                        cached["solar_irradiance_kwh_m2_day"] = round(float(sw_c) * 0.024, 2)
-                    cached["data_status"] = "MEASURED_NASA_POWER"
-                    return cached
+        url = (
+            f"https://power.larc.nasa.gov/api/temporal/climatology/point"
+            f"?parameters=TS,ALLSKY_SFC_SW_DWN,PRECTOTCORR,WS10M,RH2M"
+            f"&community=SB&longitude={round(lon, 3)}&latitude={round(lat, 3)}&format=JSON"
+        )
 
-        url = "https://power.larc.nasa.gov/api/temporal/climatology/point"
-        params = {
-            "parameters": "TS,ALLSKY_SFC_SW_DWN,PRECTOTCORR,WS10M,RH2M",
-            "community": "SB",
-            "longitude": round(lon, 3),
-            "latitude": round(lat, 3),
-            "format": "JSON"
-        }
-
-        try:
-            resp = self.session.get(url, params=params, timeout=(2.5, 4.0))
-            resp.raise_for_status()
-            p = resp.json()["properties"]["parameter"]
-
-            def _read_valid(val):
-                v = float(val)
-                return None if v < -900.0 else round(v, 2)
-
-            ts = _read_valid(p["TS"]["ANN"])
-            sw_raw = _read_valid(p["ALLSKY_SFC_SW_DWN"]["ANN"])
-            sw = round(sw_raw * 0.024, 2) if (sw_raw is not None and sw_raw > 24.0) else sw_raw
-            pr = _read_valid(p["PRECTOTCORR"]["ANN"])
-            ws = _read_valid(p["WS10M"]["ANN"])
-            rh = _read_valid(p["RH2M"]["ANN"])
-
-            res = {
-                "mean_surface_temp_c": round(ts, 1) if ts is not None else None,
-                "solar_irradiance_kwh_m2_day": sw,
-                "precipitation_mm_day": pr,
-                "wind_speed_10m_ms": ws,
-                "relative_humidity_pct": round(rh, 1) if rh is not None else None,
-                "source": "NASA POWER Langley Satellite Climatology (Live API)",
-                "data_status": "MEASURED_NASA_POWER"
-            }
+        if not self.offline_mode:
             with self._cache_lock:
-                self.telemetry_cache["climate"][key] = res
-                self._save_telemetry_cache()
-            return res
-        except Exception:
-            return {
-                "mean_surface_temp_c": None,
-                "solar_irradiance_kwh_m2_day": None,
-                "precipitation_mm_day": None,
-                "wind_speed_10m_ms": None,
-                "relative_humidity_pct": None,
-                "source": "NASA POWER Unreachable (No Synthetic Imputation)",
-                "data_status": "UNAVAILABLE"
-            }
+                if key in self.telemetry_cache["climate"]:
+                    cached = self.telemetry_cache["climate"][key]
+                    if "Live API" in cached.get("source", "") and cached.get("mean_surface_temp_c") is not None:
+                        sw_c = cached.get("solar_irradiance_kwh_m2_day")
+                        if sw_c is not None and float(sw_c) > 24.0:
+                            cached["solar_irradiance_kwh_m2_day"] = round(float(sw_c) * 0.024, 2)
+                        cached["status_label"] = "NASA'dan al?nd?"
+                        cached["data_status"] = "MEASURED_NASA_POWER"
+                        cached["source_url"] = url
+                        cached["temporal_coverage"] = "30-Year Climatology (1991-2020)"
+                        cached["quality_flag"] = "QF-1 (NASA POWER Validated - Earth Context Only)"
+                        return cached
+
+            try:
+                resp = self.session.get(url, timeout=(2.5, 4.0))
+                resp.raise_for_status()
+                p = resp.json()["properties"]["parameter"]
+
+                def _read_valid(val):
+                    v = float(val)
+                    return None if v < -900.0 else round(v, 2)
+
+                ts = _read_valid(p["TS"]["ANN"])
+                sw_raw = _read_valid(p["ALLSKY_SFC_SW_DWN"]["ANN"])
+                sw = round(sw_raw * 0.024, 2) if (sw_raw is not None and sw_raw > 24.0) else sw_raw
+                pr = _read_valid(p["PRECTOTCORR"]["ANN"])
+                ws = _read_valid(p["WS10M"]["ANN"])
+                rh = _read_valid(p["RH2M"]["ANN"])
+
+                if ts is not None:
+                    res = {
+                        "mean_surface_temp_c": round(ts, 1),
+                        "solar_irradiance_kwh_m2_day": sw,
+                        "precipitation_mm_day": pr,
+                        "wind_speed_10m_ms": ws,
+                        "relative_humidity_pct": round(rh, 1) if rh is not None else None,
+                        "temporal_coverage": "30-Year Climatology (1991-2020)",
+                        "product_version": "NASA POWER Release 9 (MERRA-2 / GEWEX SRB)",
+                        "source": "NASA POWER Langley Satellite Climatology (Live API)",
+                        "source_url": url,
+                        "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "quality_flag": "QF-1 (Validated Earth Meteorology - Context Only)",
+                        "status_label": "NASA'dan al?nd?",
+                        "data_status": "MEASURED_NASA_POWER"
+                    }
+                    with self._cache_lock:
+                        self.telemetry_cache["climate"][key] = res
+                        self._save_telemetry_cache()
+                    return res
+            except Exception:
+                pass
+
+        return {
+            "mean_surface_temp_c": None,
+            "solar_irradiance_kwh_m2_day": None,
+            "precipitation_mm_day": None,
+            "wind_speed_10m_ms": None,
+            "relative_humidity_pct": None,
+            "temporal_coverage": "N/A",
+            "product_version": "NASA POWER Release 9",
+            "source": "NASA POWER Unreachable (Zero Imputation)",
+            "source_url": url,
+            "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "quality_flag": "QF-0 (Missing / Network Error - Not Imputed)",
+            "status_label": "veri yok",
+            "data_status": "UNAVAILABLE"
+        }
 
     @staticmethod
     def _geological_province_tag(lat: float, lon: float) -> str:
@@ -638,9 +556,9 @@ class PlanetaryDataLoader:
 
         name = None
         if lat <= -60.0:
-            name = f"Antarctic Polar Ice Sheet & Dry Valleys Sector, Antarctica ({lat:.2f}°, {lon:.2f}°)"
+            name = f"Antarctic Polar Ice Sheet & Dry Valleys Sector, Antarctica ({lat:.2f}?, {lon:.2f}?)"
         elif (60.0 <= lat <= 75.0 and -58.0 <= lon <= -12.0) or (75.0 < lat <= 83.5 and -73.0 <= lon <= -12.0):
-            name = f"Northeast Greenland Ice-Sheet & Fjord Margin, Greenland ({lat:.2f}°, {lon:.2f}°)"
+            name = f"Northeast Greenland Ice-Sheet & Fjord Margin, Greenland ({lat:.2f}?, {lon:.2f}?)"
         elif self._geo_tree is not None:
             try:
                 _, idx = self._geo_tree.query([float(lat), float(lon)], k=1)
@@ -656,7 +574,7 @@ class PlanetaryDataLoader:
                 pass
 
         if not name:
-            name = f"Terrestrial Analog Zone ({lat:.2f}°, {lon:.2f}°)"
+            name = f"Terrestrial Analog Zone ({lat:.2f}?, {lon:.2f}?)"
 
         with self._cache_lock:
             self.telemetry_cache["geocode"][key] = name

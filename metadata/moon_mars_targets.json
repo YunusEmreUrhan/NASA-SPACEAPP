@@ -2,247 +2,607 @@
   "MOON_MARE_TRANQUILLITATIS_PIT": {
     "id": "MOON_MARE_TRANQUILLITATIS_PIT",
     "body": "Moon",
-    "name": "Mare Tranquillitatis Pit (Subsurface Lava Tube Skylight)",
+    "name": "Mare Tranquillitatis Pit",
     "lat": 8.335,
     "lon": 33.222,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Moon 2000 Planetocentric",
+    "data_status": "NASA verisinden i?lendi",
+    "observations": {
+      "feature_scale_km": {
+        "value": 0.1,
+        "uncertainty": 0.01,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LROC NAC High-Resolution Pit Photogrammetry",
+        "epoch": "2010-2024 Multi-Pass",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.nasa.gov/solar-system/moon/nasa-images-show-pits-on-moon-that-may-lead-to-caves/"
+      },
+      "regional_basin_scale_km": {
+        "value": 18.0,
+        "uncertainty": 1.5,
+        "unit": "km",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA Gridded Topographic depression delineation",
+        "epoch": "2009-2023",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm"
+      },
+      "mean_slope_deg": {
+        "value": 2.4,
+        "uncertainty": 0.3,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA 100m Gridded DEM (SLDEM2015)",
+        "epoch": "2009-2015",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm"
+      },
+      "vertical_relief_m": {
+        "value": 105.0,
+        "uncertainty": 5.0,
+        "unit": "m",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LROC NAC Stereo / LOLA Altimetry (Wagner & Robinson 2014)",
+        "epoch": "2014",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.nasa.gov/solar-system/moon/nasa-images-show-pits-on-moon-that-may-lead-to-caves/"
+      },
+      "bolometric_albedo": {
+        "value": 0.07,
+        "uncertainty": 0.01,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO Diviner Lunar Radiometer Lambert Albedo",
+        "epoch": "2009-2022",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm"
+      },
+      "surface_temp_k": {
+        "value": 250.15,
+        "uncertainty": 4.5,
+        "unit": "K",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO Diviner Bolometric Mean Subsurface/Pit Equilibrium",
+        "epoch": "2009-2022",
+        "quality_flag": "QF-2 (Context Only - Not comparable to Earth 2m Air Temp)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm"
+      }
+    },
+    "primary_process": "Volcanic Mare Basalt Emplacement & Skylight Collapse",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
+    "mean_temp_c": -23.0,
     "gravity_g": 0.165,
     "pressure_mbar": 0.0,
-    "mean_temp_c": -23.0,
     "radiation_msv_yr": 380.0,
     "physical_measurements": {
       "structure_diameter_km": 0.1,
       "regional_basin_diameter_km": 18.0,
       "mean_slope_deg": 2.4,
-      "safe_landing_pct": 88.0,
+      "slope_uncertainty_deg": 0.3,
       "vertical_relief_m": 105.0,
+      "relief_uncertainty_m": 5.0,
       "bolometric_albedo": 0.07,
-      "subsurface_void_depth_m": 100.0,
-      "water_ice_wt_pct": 0.0,
-      "solar_irradiance_kwh_m2_day": 6.8,
-      "measurement_source": "NASA LRO LROC NAC / LOLA DEM & Diviner Radiometer (Haruyama et al. / Wagner & Robinson 2014)",
-      "official_url": "https://www.nasa.gov/solar-system/moon/nasa-images-show-pits-on-moon-that-may-lead-to-caves/"
+      "albedo_uncertainty": 0.01,
+      "measurement_source": "LRO LOLA 100m Gridded DEM (SLDEM2015)",
+      "official_url": "https://www.nasa.gov/solar-system/moon/nasa-images-show-pits-on-moon-that-may-lead-to-caves/",
+      "status_label": "NASA verisinden i?lendi"
     },
-    "nasa_missions": [
-      "NASA LRO LROC NAC",
-      "LRO LOLA Altimeter",
-      "LRO Diviner"
-    ],
-    "primary_process": "Volcanic Caldera Collapse, Lava Tubes & Tectonic Chasma Canyons",
-    "mission_focus": "Subsurface Lava Tube Radiation Shelter & Mare Basalt ISRU",
     "features_6d": [
       0.8,
       0.88,
-      0.766,
-      0.04,
-      0.308,
-      0.652
+      0.834,
+      0.187,
+      0.904,
+      0.175
     ],
-    "description": "Measured via NASA LRO LROC NAC / LOLA DEM & Diviner Radiometer (Haruyama et al. / Wagner & Robinson 2014): Mean Slope 2.4°, Vertical Relief 105.0 m, Scale 18.0 km."
+    "description": "[NASA verisinden i?lendi] LRO LOLA 100m Gridded DEM (SLDEM2015): E?im 2.4? (?0.3?), R?lyef 105.0 m (?5.0 m)."
   },
   "MOON_SHACKLETON_RIM": {
     "id": "MOON_SHACKLETON_RIM",
     "body": "Moon",
-    "name": "Shackleton Crater Rim (Artemis Lunar South Pole Base)",
+    "name": "Shackleton Crater Rim (Lunar South Pole)",
     "lat": -89.9,
     "lon": 0.0,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Moon 2000 Planetocentric",
+    "data_status": "NASA'dan al?nd?",
+    "observations": {
+      "feature_scale_km": {
+        "value": 21.0,
+        "uncertainty": 0.5,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LOLA / ShadowCam South Pole Crater Catalog (Zuber et al. 2012)",
+        "epoch": "2012-2023",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/resource/shackleton-crater/"
+      },
+      "regional_basin_scale_km": {
+        "value": 21.0,
+        "uncertainty": 0.5,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LOLA Polar DEM",
+        "epoch": "2012",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/resource/shackleton-crater/"
+      },
+      "mean_slope_deg": {
+        "value": 14.5,
+        "uncertainty": 0.8,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA 20m South Polar DEM",
+        "epoch": "2009-2020",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm"
+      },
+      "vertical_relief_m": {
+        "value": 4200.0,
+        "uncertainty": 25.0,
+        "unit": "m",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LOLA Laser Altimeter",
+        "epoch": "2012",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/resource/shackleton-crater/"
+      },
+      "bolometric_albedo": {
+        "value": 0.22,
+        "uncertainty": 0.02,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LOLA 1064nm Normal Albedo",
+        "epoch": "2012",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/resource/shackleton-crater/"
+      },
+      "surface_temp_k": {
+        "value": 90.0,
+        "uncertainty": 3.0,
+        "unit": "K",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO Diviner Polar Cold-Trap Radiometry",
+        "epoch": "2009-2022",
+        "quality_flag": "QF-2 (Context Only - Not comparable to Earth 2m Air Temp)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm"
+      }
+    },
+    "primary_process": "Impact Cratering & Polar Cryospheric Cold-Trapping",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
+    "mean_temp_c": -183.1,
     "gravity_g": 0.165,
     "pressure_mbar": 0.0,
-    "mean_temp_c": -183.0,
-    "radiation_msv_yr": 410.0,
+    "radiation_msv_yr": 380.0,
     "physical_measurements": {
       "structure_diameter_km": 21.0,
       "regional_basin_diameter_km": 21.0,
       "mean_slope_deg": 14.5,
-      "safe_landing_pct": 34.0,
+      "slope_uncertainty_deg": 0.8,
       "vertical_relief_m": 4200.0,
+      "relief_uncertainty_m": 25.0,
       "bolometric_albedo": 0.22,
-      "subsurface_void_depth_m": 0.0,
-      "water_ice_wt_pct": 5.6,
-      "solar_irradiance_kwh_m2_day": 11.8,
-      "measurement_source": "NASA LRO LOLA South Polar DEM (Zuber et al. 2012) & LCROSS Impact Plume Spectroscopy",
-      "official_url": "https://science.nasa.gov/resource/shackleton-crater/"
+      "albedo_uncertainty": 0.02,
+      "measurement_source": "LRO LOLA 20m South Polar DEM",
+      "official_url": "https://science.nasa.gov/resource/shackleton-crater/",
+      "status_label": "NASA'dan al?nd?"
     },
-    "nasa_missions": [
-      "NASA Artemis III/IV",
-      "LRO LOLA",
-      "LCROSS Spectrometer"
-    ],
-    "primary_process": "Cryospheric Polar Ice Cap & Periglacial Cold-Trap Dynamics",
-    "mission_focus": "Cryogenic Water-Ice ISRU Mining & Peaks of Eternal Light Solar Array",
     "features_6d": [
       0.371,
       0.275,
+      0.3,
       0.98,
-      0.669,
-      0.12,
-      0.35
+      0.42,
+      0.98
     ],
-    "description": "Measured via NASA LRO LOLA South Polar DEM (Zuber et al. 2012) & LCROSS Impact Plume Spectroscopy: Mean Slope 14.5°, Vertical Relief 4200.0 m, Scale 21.0 km."
+    "description": "[NASA'dan al?nd?] LRO LOLA 20m South Polar DEM: E?im 14.5? (?0.8?), R?lyef 4200.0 m (?25.0 m)."
   },
   "MOON_MARIUS_HILLS": {
     "id": "MOON_MARIUS_HILLS",
     "body": "Moon",
-    "name": "Marius Hills Volcanic Dome & Skylight Rille",
+    "name": "Marius Hills Volcanic Dome & Rille",
     "lat": 14.09,
     "lon": -56.77,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Moon 2000 Planetocentric",
+    "data_status": "NASA verisinden i?lendi",
+    "observations": {
+      "feature_scale_km": {
+        "value": 0.065,
+        "uncertainty": 0.01,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO LROC NAC Marius Hills Pit Measurement",
+        "epoch": "2010-2017",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.jpl.nasa.gov/images/pia13518-marius-hills-pit-lava-tube-skylight/"
+      },
+      "regional_basin_scale_km": {
+        "value": 25.0,
+        "uncertainty": 2.0,
+        "unit": "km",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA / GRAIL Volcanic Plateau Delineation",
+        "epoch": "2014",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.jpl.nasa.gov/images/pia13518-marius-hills-pit-lava-tube-skylight/"
+      },
+      "mean_slope_deg": {
+        "value": 3.8,
+        "uncertainty": 0.4,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA Gridded DEM (SLDEM2015)",
+        "epoch": "2015",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm"
+      },
+      "vertical_relief_m": {
+        "value": 240.0,
+        "uncertainty": 12.0,
+        "unit": "m",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO LOLA Dome Relief",
+        "epoch": "2015",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm"
+      },
+      "bolometric_albedo": {
+        "value": 0.08,
+        "uncertainty": 0.01,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "LRO Diviner Albedo",
+        "epoch": "2009-2022",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm"
+      },
+      "surface_temp_k": {
+        "value": 248.15,
+        "uncertainty": 5.0,
+        "unit": "K",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "LRO Diviner Equatorial Bolometric Mean",
+        "epoch": "2009-2022",
+        "quality_flag": "QF-2 (Context Only)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm"
+      }
+    },
+    "primary_process": "Mafic Shield Volcanism & Sinuous Rille Evolution",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
+    "mean_temp_c": -25.0,
     "gravity_g": 0.165,
     "pressure_mbar": 0.0,
-    "mean_temp_c": -25.0,
-    "radiation_msv_yr": 390.0,
+    "radiation_msv_yr": 380.0,
     "physical_measurements": {
       "structure_diameter_km": 0.065,
       "regional_basin_diameter_km": 25.0,
       "mean_slope_deg": 3.8,
-      "safe_landing_pct": 79.0,
+      "slope_uncertainty_deg": 0.4,
       "vertical_relief_m": 240.0,
+      "relief_uncertainty_m": 12.0,
       "bolometric_albedo": 0.08,
-      "subsurface_void_depth_m": 80.0,
-      "water_ice_wt_pct": 0.0,
-      "solar_irradiance_kwh_m2_day": 6.6,
-      "measurement_source": "JAXA SELENE Radar Sounder & NASA GRAIL / LRO LOLA Altimetry",
-      "official_url": "https://www.jpl.nasa.gov/images/pia13518-marius-hills-pit-lava-tube-skylight/"
+      "albedo_uncertainty": 0.01,
+      "measurement_source": "LRO LOLA Gridded DEM (SLDEM2015)",
+      "official_url": "https://www.jpl.nasa.gov/images/pia13518-marius-hills-pit-lava-tube-skylight/",
+      "status_label": "NASA verisinden i?lendi"
     },
-    "nasa_missions": [
-      "NASA GRAIL Gravity",
-      "LRO LOLA",
-      "SELENE Kaguya"
-    ],
-    "primary_process": "Mafic Shield Volcanism & Dark Basaltic Mare/Plains Evolution",
-    "mission_focus": "Volcanic Dome Geology, Sinuous Rille Lava Tube Shelter & Basalt ISRU",
     "features_6d": [
       0.771,
       0.81,
-      0.765,
-      0.04,
-      0.283,
-      0.613
+      0.827,
+      0.199,
+      0.848,
+      0.4
     ],
-    "description": "Measured via JAXA SELENE Radar Sounder & NASA GRAIL / LRO LOLA Altimetry: Mean Slope 3.8°, Vertical Relief 240.0 m, Scale 25.0 km."
+    "description": "[NASA verisinden i?lendi] LRO LOLA Gridded DEM (SLDEM2015): E?im 3.8? (?0.4?), R?lyef 240.0 m (?12.0 m)."
   },
   "MARS_JEZERO_CRATER": {
     "id": "MARS_JEZERO_CRATER",
     "body": "Mars",
-    "name": "Jezero Crater Paleo-Lake Delta (Mars 2020 Landing Site)",
+    "name": "Jezero Crater Paleo-Lake Delta",
     "lat": 18.38,
     "lon": 77.58,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Mars 2000 Planetocentric",
+    "data_status": "NASA'dan al?nd?",
+    "observations": {
+      "feature_scale_km": {
+        "value": 45.0,
+        "uncertainty": 1.0,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "Mars 2020 Landing Site Selection / MGS MOLA Crater Catalog",
+        "epoch": "2018-2024",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/mission/mars-2020-perseverance/landing-site/"
+      },
+      "regional_basin_scale_km": {
+        "value": 45.0,
+        "uncertainty": 1.0,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "MGS MOLA DEM",
+        "epoch": "2018",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/mission/mars-2020-perseverance/landing-site/"
+      },
+      "mean_slope_deg": {
+        "value": 3.2,
+        "uncertainty": 0.4,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MRO HiRISE / MGS MOLA Blending DEM (Fergason et al. 2020)",
+        "epoch": "2020",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-2020-terrain-relative-navigation"
+      },
+      "vertical_relief_m": {
+        "value": 210.0,
+        "uncertainty": 10.0,
+        "unit": "m",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA / HiRISE Western Delta Escarpment Relief",
+        "epoch": "2020",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://science.nasa.gov/mission/mars-2020-perseverance/landing-site/"
+      },
+      "bolometric_albedo": {
+        "value": 0.16,
+        "uncertainty": 0.02,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "MGS TES Lambert Albedo",
+        "epoch": "1999-2006",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/tes.html"
+      },
+      "surface_temp_k": {
+        "value": 218.15,
+        "uncertainty": 4.0,
+        "unit": "K",
+        "status_label": "NASA'dan al?nd?",
+        "product": "Mars 2020 MEDA / Mars Odyssey THEMIS Mean Surface Temp",
+        "epoch": "2021-2024",
+        "quality_flag": "QF-2 (Context Only)",
+        "source_url": "https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/PERSEVERANCE/meda.html"
+      }
+    },
+    "primary_process": "Fluvio-Lacustrine Deltaic Sedimentation & Aeolian Alteration",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
+    "mean_temp_c": -55.0,
     "gravity_g": 0.378,
     "pressure_mbar": 6.1,
-    "mean_temp_c": -55.0,
     "radiation_msv_yr": 230.0,
     "physical_measurements": {
       "structure_diameter_km": 45.0,
       "regional_basin_diameter_km": 45.0,
       "mean_slope_deg": 3.2,
-      "safe_landing_pct": 84.0,
+      "slope_uncertainty_deg": 0.4,
       "vertical_relief_m": 210.0,
+      "relief_uncertainty_m": 10.0,
       "bolometric_albedo": 0.16,
-      "subsurface_void_depth_m": 0.0,
-      "water_ice_wt_pct": 2.5,
-      "solar_irradiance_kwh_m2_day": 4.2,
-      "measurement_source": "NASA Mars 2020 Perseverance / MRO HiRISE DEM & MGS MOLA Altimetry",
-      "official_url": "https://science.nasa.gov/mission/mars-2020-perseverance/landing-site/"
+      "albedo_uncertainty": 0.02,
+      "measurement_source": "MRO HiRISE / MGS MOLA Blending DEM (Fergason et al. 2020)",
+      "official_url": "https://science.nasa.gov/mission/mars-2020-perseverance/landing-site/",
+      "status_label": "NASA'dan al?nd?"
     },
-    "nasa_missions": [
-      "Mars 2020 Perseverance",
-      "MRO HiRISE & CRISM",
-      "MGS MOLA"
-    ],
-    "primary_process": "Aeolian Sedimentation & Paleo-Crater Basin Alteration",
-    "mission_focus": "Paleo-Lake Biosignature Sample Return & Autonomous Rover Traverse",
     "features_6d": [
       0.543,
       0.84,
-      0.623,
-      0.188,
-      0.743,
-      0.122
+      0.727,
+      0.387,
+      0.872,
+      0.35
     ],
-    "description": "Measured via NASA Mars 2020 Perseverance / MRO HiRISE DEM & MGS MOLA Altimetry: Mean Slope 3.2°, Vertical Relief 210.0 m, Scale 45.0 km."
+    "description": "[NASA'dan al?nd?] MRO HiRISE / MGS MOLA Blending DEM (Fergason et al. 2020): E?im 3.2? (?0.4?), R?lyef 210.0 m (?10.0 m)."
   },
   "MARS_ARCADIA_PLANITIA": {
     "id": "MARS_ARCADIA_PLANITIA",
     "body": "Mars",
-    "name": "Arcadia Planitia Shallow Subsurface Ice Sheet Base",
+    "name": "Arcadia Planitia Shallow Ice Sheet",
     "lat": 39.2,
     "lon": -188.0,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Mars 2000 Planetocentric",
+    "data_status": "NASA verisinden i?lendi",
+    "observations": {
+      "feature_scale_km": {
+        "value": 35.0,
+        "uncertainty": 2.5,
+        "unit": "km",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MRO SHARAD Subsurface Reflector Basin Scale",
+        "epoch": "2015-2019",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.jpl.nasa.gov/news/nasas-treasure-map-for-water-ice-on-mars"
+      },
+      "regional_basin_scale_km": {
+        "value": 35.0,
+        "uncertainty": 2.5,
+        "unit": "km",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA / SHARAD",
+        "epoch": "2019",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.jpl.nasa.gov/news/nasas-treasure-map-for-water-ice-on-mars"
+      },
+      "mean_slope_deg": {
+        "value": 1.4,
+        "uncertainty": 0.2,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA MEGDR 463m DEM",
+        "epoch": "1999-2003",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+      },
+      "vertical_relief_m": {
+        "value": 65.0,
+        "uncertainty": 6.0,
+        "unit": "m",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA MEGDR 463m DEM",
+        "epoch": "1999-2003",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+      },
+      "bolometric_albedo": {
+        "value": 0.24,
+        "uncertainty": 0.02,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "MGS TES Lambert Albedo",
+        "epoch": "1999-2006",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/tes.html"
+      },
+      "surface_temp_k": {
+        "value": 195.15,
+        "uncertainty": 3.5,
+        "unit": "K",
+        "status_label": "NASA'dan al?nd?",
+        "product": "Mars Odyssey THEMIS / MCS Subsurface Ice Table Study (Piqueux et al. 2019)",
+        "epoch": "2019",
+        "quality_flag": "QF-2 (Context Only)",
+        "source_url": "https://www.jpl.nasa.gov/news/nasas-treasure-map-for-water-ice-on-mars"
+      }
+    },
+    "primary_process": "Periglacial Plain Evolution & Subsurface Ice Sheet Preservation",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
-    "gravity_g": 0.378,
-    "pressure_mbar": 7.2,
     "mean_temp_c": -78.0,
-    "radiation_msv_yr": 210.0,
+    "gravity_g": 0.378,
+    "pressure_mbar": 6.1,
+    "radiation_msv_yr": 230.0,
     "physical_measurements": {
       "structure_diameter_km": 35.0,
       "regional_basin_diameter_km": 35.0,
       "mean_slope_deg": 1.4,
-      "safe_landing_pct": 95.0,
+      "slope_uncertainty_deg": 0.2,
       "vertical_relief_m": 65.0,
+      "relief_uncertainty_m": 6.0,
       "bolometric_albedo": 0.24,
-      "subsurface_void_depth_m": 0.0,
-      "water_ice_wt_pct": 65.0,
-      "solar_irradiance_kwh_m2_day": 3.4,
-      "measurement_source": "NASA MRO SHARAD Subsurface Radar & Phoenix/HiRISE Ice-Exposing Impacts (Piqueux et al. 2019)",
-      "official_url": "https://www.jpl.nasa.gov/news/nasas-treasure-map-for-water-ice-on-mars"
+      "albedo_uncertainty": 0.02,
+      "measurement_source": "MGS MOLA MEGDR 463m DEM",
+      "official_url": "https://www.jpl.nasa.gov/news/nasas-treasure-map-for-water-ice-on-mars",
+      "status_label": "NASA verisinden i?lendi"
     },
-    "nasa_missions": [
-      "MRO SHARAD Radar",
-      "Mars Odyssey THEMIS",
-      "MGS MOLA"
-    ],
-    "primary_process": "Cryospheric Polar Ice Cap & Periglacial Cold-Trap Dynamics",
-    "mission_focus": "Flat Heavy-Starship Landing Pad (<2° Slope) & Shallow Ice ISRU Mining",
     "features_6d": [
       0.314,
       0.93,
-      0.614,
-      0.75,
-      0.583,
-      0.12
+      0.65,
+      0.53,
+      0.944,
+      0.108
     ],
-    "description": "Measured via NASA MRO SHARAD Subsurface Radar & Phoenix/HiRISE Ice-Exposing Impacts (Piqueux et al. 2019): Mean Slope 1.4°, Vertical Relief 65.0 m, Scale 35.0 km."
+    "description": "[NASA verisinden i?lendi] MGS MOLA MEGDR 463m DEM: E?im 1.4? (?0.2?), R?lyef 65.0 m (?6.0 m)."
   },
   "MARS_ARSIA_MONS_CAVES": {
     "id": "MARS_ARSIA_MONS_CAVES",
     "body": "Mars",
-    "name": "Arsia Mons 'Seven Sisters' Skylight Caves (Tharsis Montes)",
+    "name": "Arsia Mons 'Seven Sisters' Skylight Pits",
     "lat": -7.22,
     "lon": -120.45,
+    "footprint_km": 10.0,
+    "coordinate_system": "IAU Mars 2000 Planetocentric",
+    "data_status": "NASA'dan al?nd?",
+    "observations": {
+      "feature_scale_km": {
+        "value": 0.18,
+        "uncertainty": 0.02,
+        "unit": "km",
+        "status_label": "NASA'dan al?nd?",
+        "product": "USGS Mars Cave Catalog / MRO HiRISE (Cushing et al. 2007)",
+        "epoch": "2007-2020",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves"
+      },
+      "regional_basin_scale_km": {
+        "value": 22.0,
+        "uncertainty": 2.0,
+        "unit": "km",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA Flank Collapse Graben Zone",
+        "epoch": "2007",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves"
+      },
+      "mean_slope_deg": {
+        "value": 6.8,
+        "uncertainty": 0.6,
+        "unit": "deg",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA MEGDR 463m DEM",
+        "epoch": "1999-2003",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+      },
+      "vertical_relief_m": {
+        "value": 380.0,
+        "uncertainty": 15.0,
+        "unit": "m",
+        "status_label": "NASA verisinden i?lendi",
+        "product": "MGS MOLA Flank & Pit Depth (Cushing 2007)",
+        "epoch": "2007",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves"
+      },
+      "bolometric_albedo": {
+        "value": 0.11,
+        "uncertainty": 0.01,
+        "unit": "ratio",
+        "status_label": "NASA'dan al?nd?",
+        "product": "MGS TES Lambert Albedo",
+        "epoch": "1999-2006",
+        "quality_flag": "QF-1 (Validated)",
+        "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/tes.html"
+      },
+      "surface_temp_k": {
+        "value": 211.15,
+        "uncertainty": 4.5,
+        "unit": "K",
+        "status_label": "NASA'dan al?nd?",
+        "product": "Mars Odyssey THEMIS Diurnal Pit Thermal Inertia (Cushing et al. 2007)",
+        "epoch": "2007",
+        "quality_flag": "QF-2 (Context Only)",
+        "source_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves"
+      }
+    },
+    "primary_process": "Shield Volcano Flank Collapse & Subsurface Pit Formation",
+    "screening_note": "Ara?t?rma ?nceli?i / ?n tarama kayd?. U?u? veya ?s g?venli?i kan?t? de?ildir.",
     "radius_km": 5.0,
-    "gravity_g": 0.378,
-    "pressure_mbar": 3.8,
     "mean_temp_c": -62.0,
-    "radiation_msv_yr": 265.0,
+    "gravity_g": 0.378,
+    "pressure_mbar": 6.1,
+    "radiation_msv_yr": 230.0,
     "physical_measurements": {
       "structure_diameter_km": 0.18,
       "regional_basin_diameter_km": 22.0,
       "mean_slope_deg": 6.8,
-      "safe_landing_pct": 62.0,
+      "slope_uncertainty_deg": 0.6,
       "vertical_relief_m": 380.0,
+      "relief_uncertainty_m": 15.0,
       "bolometric_albedo": 0.11,
-      "subsurface_void_depth_m": 130.0,
-      "water_ice_wt_pct": 1.0,
-      "solar_irradiance_kwh_m2_day": 4.9,
-      "measurement_source": "NASA Mars Odyssey THEMIS Thermal Inertia & MRO HiRISE Pit Photogrammetry (Cushing et al. 2007)",
-      "official_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves"
+      "albedo_uncertainty": 0.01,
+      "measurement_source": "MGS MOLA MEGDR 463m DEM",
+      "official_url": "https://www.usgs.gov/centers/astrogeology-science-center/science/mars-caves",
+      "status_label": "NASA'dan al?nd?"
     },
-    "nasa_missions": [
-      "Mars Odyssey THEMIS",
-      "MRO HiRISE",
-      "MGS MOLA"
-    ],
-    "primary_process": "Volcanic Caldera Collapse, Lava Tubes & Tectonic Chasma Canyons",
-    "mission_focus": "High-Altitude Volcanic Cave Habitat & Subsurface Astrobiology",
     "features_6d": [
       0.686,
       0.66,
-      0.645,
-      0.075,
-      0.62,
-      0.872
+      0.704,
+      0.43,
+      0.728,
+      0.633
     ],
-    "description": "Measured via NASA Mars Odyssey THEMIS Thermal Inertia & MRO HiRISE Pit Photogrammetry (Cushing et al. 2007): Mean Slope 6.8°, Vertical Relief 380.0 m, Scale 22.0 km."
+    "description": "[NASA'dan al?nd?] MGS MOLA MEGDR 463m DEM: E?im 6.8? (?0.6?), R?lyef 380.0 m (?15.0 m)."
   }
 }

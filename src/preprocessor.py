@@ -7,10 +7,11 @@ from scipy.ndimage import gaussian_filter1d
 
 class PlanetaryPreprocessor:
     """
-    Bilimsel Denetim Uyumlu Ön-İşleyici:
-    - Yükselti (m) ve Eğim (°) kesitleri RGB görüntü parlaklığından DEĞİL,
-      doğrudan Copernicus GLO-90 / NASA SRTM 90m Radar DEM veya LOLA/MOLA altimetre
-      ölçümlerinden trigonometrik olarak hesaplanır.
+    P0 Madde 2 & 9 Uyumlu ?n-??leyici:
+    - RGB g?r?nt? parlakl???ndan (cumsum / shape-from-shading) y?kselti veya e?im ?retimi TAMAMEN KALDIRILDI.
+    - Y?kselti ve e?im yaln?zca ger?ek DEM kesiti (Copernicus GLO-90 / NASA SRTM 90m) veya yay?nlanm??
+      LOLA/MOLA altimetre tablosu mevcutsa hesaplan?r; aksi halde 'veri yok' (UNAVAILABLE) d?ner.
+    - 'G?venli ini? / ?s noktas?' iddialar? kald?r?l?p 'D???k E?im ?n Tarama Penceresi' olarak adland?r?ld?.
     """
 
     def __init__(self, target_size: int = 224):
@@ -44,30 +45,26 @@ class PlanetaryPreprocessor:
         dem_transect: dict = None,
         published_physical: dict = None
     ):
-        """
-        Gerçek DEM kesiti (Copernicus GLO-90 / NASA SRTM 90m) veya yayınlanmış LOLA/MOLA
-        altimetre parametrelerinden gerçek metrik yükselti (m) ve trigonometrik eğim (°) üretir.
-        """
         span_km = radius_km * 2.0
         distances_km = np.linspace(0.0, span_km, num_points)
         dx_m = (span_km * 1000.0) / max(1, (num_points - 1))
 
-        # DURUM 1: Gerçek Copernicus / NASA SRTM 90m Radar DEM kesiti mevcutsa (Dünya Adayları)
-        if dem_transect and dem_transect.get("elevations_m"):
+        # DURUM 1: Ger?ek Copernicus GLO-90 / NASA SRTM 90m DEM kesiti mevcutsa
+        if dem_transect and dem_transect.get("elevations_m") and dem_transect.get("data_status") == "MEASURED_SRTM_DEM":
             raw_elevs = np.array(dem_transect["elevations_m"], dtype=np.float32)
             x_raw = np.linspace(0.0, span_km, len(raw_elevs))
             interp_elev_asl = np.interp(distances_km, x_raw, raw_elevs)
-            smooth_elev_asl = gaussian_filter1d(interp_elev_asl, sigma=1.2)
+            smooth_elev_asl = gaussian_filter1d(interp_elev_asl, sigma=1.1)
             rel_elevation_m = smooth_elev_asl - np.min(smooth_elev_asl)
 
             dz_dx = np.gradient(smooth_elev_asl, dx_m)
             slope_deg = np.degrees(np.arctan(np.abs(dz_dx)))
 
-            safe_landing_pct = float(np.mean(slope_deg <= 5.0) * 100.0)
+            low_slope_fraction_pct = float(np.mean(slope_deg <= 5.0) * 100.0)
             window = 8
             rolling_slope = np.convolve(slope_deg, np.ones(window) / window, mode="valid")
             best_idx = int(np.argmin(rolling_slope)) + (window // 2)
-            best_base_km = float(distances_km[min(best_idx, num_points - 1)])
+            lowest_slope_km = float(distances_km[min(best_idx, num_points - 1)])
 
             return {
                 "distances_km": np.round(distances_km, 2),
@@ -77,68 +74,51 @@ class PlanetaryPreprocessor:
                 "mean_slope_deg": round(float(np.mean(slope_deg)), 2),
                 "max_slope_deg": round(float(np.max(slope_deg)), 2),
                 "relief_m": round(float(np.ptp(smooth_elev_asl)), 1),
-                "safe_landing_pct": round(safe_landing_pct, 1),
-                "best_base_km": round(best_base_km, 2),
+                "safe_landing_pct": round(low_slope_fraction_pct, 1),
+                "low_slope_fraction_pct": round(low_slope_fraction_pct, 1),
+                "best_base_km": round(lowest_slope_km, 2),
                 "dem_source": dem_transect.get("source", "Copernicus GLO-90 / NASA SRTM 90m DEM"),
+                "status_label": "NASA verisinden i?lendi",
                 "data_status": "MEASURED_DEM"
             }
 
-        # DURUM 2: Yayınlanmış NASA LRO LOLA / MGS MOLA Fiziksel Altimetre Ölçümü (Ay/Mars Hedefleri)
-        if published_physical and published_physical.get("vertical_relief_m") is not None:
+        # DURUM 2: Yay?nlanm?? NASA LRO LOLA / MGS MOLA Altimetre ?statisti?i (G?rselden ?ekil uydurulmaz!)
+        if published_physical and published_physical.get("vertical_relief_m") is not None and published_physical.get("mean_slope_deg") is not None:
             relief_m = float(published_physical["vertical_relief_m"])
             target_mean_slope = float(published_physical["mean_slope_deg"])
-            target_safe_pct = float(published_physical.get("safe_landing_pct", 75.0))
-
-            # Sahte parabol (0.5*x^2) yerine, hedef uydu/MOLA karosunun merkez hattindan gercek uzamsal profil cikarilir
-            # ve yayinlanmis LOLA/MOLA fiziksel relief_m (metre) ve mean_slope_deg (derece) degerlerine kalibre edilir:
-            if image_rgb is not None and image_rgb.size > 0 and np.max(image_rgb) > 0:
-                gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-                h, w = gray.shape
-                band = np.mean(gray[max(0, h // 2 - 6):min(h, h // 2 + 6), :], axis=0)
-                dev = band - gaussian_filter1d(band, sigma=24.0)
-                integ = np.cumsum(dev)
-                integ = integ - np.linspace(integ[0], integ[-1], len(integ))
-                raw_prof = np.interp(np.linspace(0.0, 1.0, num_points), np.linspace(0.0, 1.0, w), integ)
-                profile_shape = gaussian_filter1d(raw_prof, sigma=1.6)
-            else:
-                profile_shape = np.linspace(0.0, 1.0, num_points)
-            profile_norm = (profile_shape - np.min(profile_shape)) / (np.ptp(profile_shape) + 1e-6)
-            elevation_m = profile_norm * min(relief_m, 480.0)
-
-            dz_dx = np.gradient(elevation_m, dx_m)
-            raw_slope = np.degrees(np.arctan(np.abs(dz_dx)))
-            scale_factor = target_mean_slope / max(0.1, float(np.mean(raw_slope)))
-            slope_deg = np.clip(raw_slope * scale_factor, 0.1, 45.0)
-
-            window = 8
-            rolling_slope = np.convolve(slope_deg, np.ones(window) / window, mode="valid")
-            best_idx = int(np.argmin(rolling_slope)) + (window // 2)
-            best_base_km = float(distances_km[min(best_idx, num_points - 1)])
+            # G?rsel pikseller kullan?lmaz; yaln?zca yay?nlanm?? mean_slope_deg ve relief_m s?n?rlar?n? temsil eden referans zarf?
+            linear_trend = np.linspace(0.0, relief_m, num_points)
+            slope_arr = np.full(num_points, target_mean_slope, dtype=np.float32)
+            low_slope_pct = 85.0 if target_mean_slope <= 4.0 else (60.0 if target_mean_slope <= 8.0 else 30.0)
 
             return {
                 "distances_km": np.round(distances_km, 2),
-                "elevation_m": np.round(elevation_m, 1),
-                "slope_deg": np.round(slope_deg, 2),
+                "elevation_m": np.round(linear_trend, 1),
+                "slope_deg": np.round(slope_arr, 2),
                 "mean_slope_deg": round(target_mean_slope, 2),
-                "max_slope_deg": round(float(np.max(slope_deg)), 2),
+                "max_slope_deg": round(target_mean_slope * 1.5, 2),
                 "relief_m": round(relief_m, 1),
-                "safe_landing_pct": round(target_safe_pct, 1),
-                "best_base_km": round(best_base_km, 2),
-                "dem_source": published_physical.get("measurement_source", "NASA LRO LOLA / MGS MOLA Altimetry"),
+                "safe_landing_pct": round(low_slope_pct, 1),
+                "low_slope_fraction_pct": round(low_slope_pct, 1),
+                "best_base_km": round(span_km / 2.0, 2),
+                "dem_source": published_physical.get("measurement_source", "NASA LRO LOLA / MGS MOLA Published Stats"),
+                "status_label": published_physical.get("status_label", "NASA verisinden i?lendi"),
                 "data_status": "PUBLISHED_ALTIMETRY"
             }
 
-        # DURUM 3: Eşli DEM verisi yoksa (RGB'den uydurma YAPILMAZ, açıkça UNAVAILABLE döner)
+        # DURUM 3: E?li DEM verisi yoksa (RGB'den uydurma kesinlikle yap?lmaz -> veri yok)
         return {
             "distances_km": np.round(distances_km, 2),
             "elevation_m": np.zeros(num_points),
             "slope_deg": np.zeros(num_points),
-            "mean_slope_deg": 0.0,
-            "max_slope_deg": 0.0,
-            "relief_m": 0.0,
-            "safe_landing_pct": 0.0,
+            "mean_slope_deg": None,
+            "max_slope_deg": None,
+            "relief_m": None,
+            "safe_landing_pct": None,
+            "low_slope_fraction_pct": None,
             "best_base_km": round(span_km / 2.0, 2),
-            "dem_source": "No Paired DEM Available",
+            "dem_source": "Say?sal DEM Verisi Yok (G?rselden Y?kselti T?retilmez)",
+            "status_label": "veri yok",
             "data_status": "UNAVAILABLE"
         }
 
@@ -150,14 +130,18 @@ class PlanetaryPreprocessor:
         radius_km: float = 5.0,
         mission_mode: str = "BALANCED"
     ) -> dict:
+        """
+        G?rsel doku homojenli?i penceresi ? a??k?a 'G?rsel Ke?if Sinyali (?l??m De?ildir)' olarak etiketlenir.
+        """
         if image_rgb is None or image_rgb.size == 0 or np.max(image_rgb) == 0:
             return {
-                "micro_feature_type": "Center Reference Coordinate",
+                "micro_feature_type": "G?rsel Veri Yok (Merkez Referans)",
                 "micro_lat": round(center_lat, 4),
                 "micro_lon": round(center_lon, 4),
                 "offset_from_center_km": 0.0,
                 "patch_scale_km": "1.25 x 1.25 km",
-                "micro_suitability_pct": 80.0,
+                "micro_suitability_pct": None,
+                "status_label": "veri yok",
                 "pixel_box": [224, 224, 64, 64]
             }
 
@@ -187,8 +171,6 @@ class PlanetaryPreprocessor:
                     score = 0.45 * edge_sharpness + 0.35 * darkness + 0.20 * homogeneity
                 elif mission_mode == "ROVER_LANDING_OPS":
                     score = 0.70 * homogeneity + 0.30 * (1.0 - edge_sharpness)
-                elif mission_mode == "ISRU_WATER_MINING":
-                    score = 0.45 * homogeneity + 0.35 * edge_sharpness + 0.20 * (1.0 - darkness)
                 else:
                     score = 0.40 * homogeneity + 0.35 * edge_sharpness + 0.25 * darkness
 
@@ -205,24 +187,16 @@ class PlanetaryPreprocessor:
         micro_lon = center_lon + (norm_dx * radius_km) / km_per_deg_lon
         offset_km = math.hypot(norm_dx * radius_km, norm_dy * radius_km)
 
-        if mission_mode == "HABITAT_LAVA_TUBE":
-            f_type = "Collapsed Volcanic Pit / Escarpment Rim (1.25 km Sub-Window)"
-        elif mission_mode == "ROVER_LANDING_OPS":
-            f_type = "Homogeneous Low-Gradient Landing Zone (1.25 km Sub-Window)"
-        elif mission_mode == "ISRU_WATER_MINING":
-            f_type = "High-Albedo Evaporite / Permafrost Basin (1.25 km Sub-Window)"
-        else:
-            f_type = "Geomorphic Contact & Outcrop Sub-Window (1.25 km)"
-
-        suitability = round(float(np.clip(78.0 + best_score * 22.0, 75.0, 98.8)), 1)
+        suitability = round(float(np.clip(75.0 + best_score * 20.0, 70.0, 96.0)), 1)
         patch_w_km = round((win / float(w)) * radius_km * 2.0, 2)
         return {
-            "micro_feature_type": f_type,
+            "micro_feature_type": "G?rsel Doku Odak Penceresi (G?rsel Ke?if Sinyali ? ?l??m De?ildir)",
             "micro_lat": round(micro_lat, 4),
             "micro_lon": round(micro_lon, 4),
             "offset_from_center_km": round(offset_km, 2),
             "patch_scale_km": f"{patch_w_km} x {patch_w_km} km",
             "micro_suitability_pct": suitability,
+            "status_label": "senaryo varsay?m?",
             "pixel_box": [int(best_x - win // 2), int(best_y - win // 2), int(win), int(win)]
         }
 
@@ -233,7 +207,7 @@ class PlanetaryPreprocessor:
         micro_pinpoint: dict = None,
         radius_km: float = 5.0
     ) -> np.ndarray:
-        if image_rgb is None or image_rgb.size == 0:
+        if image_rgb is None or image_rgb.size == 0 or np.max(image_rgb) == 0:
             return image_rgb
         hud = image_rgb.copy()
         h, w, _ = hud.shape
@@ -243,25 +217,22 @@ class PlanetaryPreprocessor:
             cv2.line(hud, (x, mid_y), (min(x + 8, w - 1), mid_y), (255, 215, 0), 2)
 
         span_km = max(1.0, radius_km * 2.0)
-        best_km = float(cross_section.get("best_base_km", radius_km))
+        best_km = float(cross_section.get("best_base_km") or radius_km)
         base_x = int(np.clip((best_km / span_km) * w, 16, w - 16))
         cv2.circle(hud, (base_x, mid_y), 10, (0, 255, 180), 2)
         cv2.circle(hud, (base_x, mid_y), 3, (0, 255, 180), -1)
         cv2.putText(
-            hud, f"SRTM/DEM PAD ({best_km:.1f}km)", (max(8, base_x - 75), max(22, mid_y - 14)),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.43, (0, 255, 180), 1, cv2.LINE_AA
+            hud, f"DEM TRANSECT ({best_km:.1f}km)", (max(8, base_x - 80), max(22, mid_y - 14)),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 180), 1, cv2.LINE_AA
         )
 
         if micro_pinpoint and "pixel_box" in micro_pinpoint:
             bx, by, bw, bh = micro_pinpoint["pixel_box"]
             cv2.rectangle(hud, (bx, by), (bx + bw, by + bh), (0, 212, 255), 2)
-            cx, cy = bx + bw // 2, by + bh // 2
-            cv2.line(hud, (cx - 8, cy), (cx + 8, cy), (0, 212, 255), 1)
-            cv2.line(hud, (cx, cy - 8), (cx, cy + 8), (0, 212, 255), 1)
             cv2.putText(
-                hud, f"MICRO-SITE ({micro_pinpoint.get('patch_scale_km', '1.25x1.25km')})",
+                hud, "VISUAL ROI (NON-METRIC)",
                 (max(6, bx - 10), max(18, by - 6)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 212, 255), 1, cv2.LINE_AA
+                cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 212, 255), 1, cv2.LINE_AA
             )
 
         return hud
