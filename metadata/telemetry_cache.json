@@ -2936,6 +2936,28 @@
       "source_url": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=TS,ALLSKY_SFC_SW_DWN,PRECTOTCORR,WS10M,RH2M&community=SB&longitude=-111.25&latitude=24.25&format=JSON",
       "status_label": "NASA'dan alındı",
       "data_status": "MEASURED_NASA_POWER"
+    },
+    "15.25_47.75": {
+      "mean_surface_temp_c": 28.4,
+      "solar_irradiance_kwh_m2_day": 6.74,
+      "precipitation_mm_day": 0.04,
+      "wind_speed_10m_ms": 3.61,
+      "relative_humidity_pct": 33.3,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)",
+      "source_url": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=TS,ALLSKY_SFC_SW_DWN,PRECTOTCORR,WS10M,RH2M&community=SB&longitude=47.75&latitude=15.25&format=JSON",
+      "status_label": "NASA'dan alındı",
+      "data_status": "MEASURED_NASA_POWER"
+    },
+    "36.25_40.25": {
+      "mean_surface_temp_c": 18.9,
+      "solar_irradiance_kwh_m2_day": 5.17,
+      "precipitation_mm_day": 0.71,
+      "wind_speed_10m_ms": 3.8,
+      "relative_humidity_pct": 49.2,
+      "source": "NASA POWER Langley Satellite Climatology (Live API)",
+      "source_url": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=TS,ALLSKY_SFC_SW_DWN,PRECTOTCORR,WS10M,RH2M&community=SB&longitude=40.25&latitude=36.25&format=JSON",
+      "status_label": "NASA'dan alındı",
+      "data_status": "MEASURED_NASA_POWER"
     }
   },
   "geocode": {
@@ -3252,7 +3274,46 @@
     "60.25_-141.75": "Alaska (Tok), United States",
     "75.75_95.25": "Krasnoyarskiy (Khatanga), Russia [Taymyr Arctic Permafrost & Cryo-Basin]",
     "81.25_-87.75": "Nunavut (Gjoa Haven), Canada [Canadian High-Arctic Permafrost Shield]",
-    "69.25_-68.25": "Nunavut (Clyde River), Canada [Ungava / Pingualuit Sub-Polar Crater Shield]"
+    "69.25_-68.25": "Nunavut (Clyde River), Canada [Ungava / Pingualuit Sub-Polar Crater Shield]",
+    "-27.25_134.25": "South Australia (Coober Pedy), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-28.25_21.75": "Northern Cape (Upington), South Africa",
+    "-32.25_140.25": "New South Wales (Broken Hill), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-24.75_19.25": "Hardap (Aranos), Namibia [Namib / Brukkaros Volcanic Escarpment]",
+    "-27.25_141.75": "South Australia (Innamincka), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-22.75_135.75": "Northern Territory (Alice Springs), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-26.75_118.25": "Western Australia (Melville), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-31.25_143.25": "New South Wales (Broken Hill), Australia",
+    "-20.75_124.25": "Western Australia (Broome), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-25.75_117.25": "Western Australia (Melville), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-24.25_139.75": "Queensland (Mount Isa), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-26.25_135.25": "South Australia (Coober Pedy), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-20.75_135.25": "Northern Territory (Tennant Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-22.25_128.75": "Western Australia (Halls Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-24.75_139.25": "South Australia (Innamincka), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-20.75_134.25": "Northern Territory (Tennant Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-30.75_142.25": "New South Wales (Broken Hill), Australia",
+    "-26.75_135.25": "South Australia (Coober Pedy), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-18.75_128.75": "Western Australia (Halls Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-27.75_143.25": "South Australia (Innamincka), Australia",
+    "-24.75_116.25": "Western Australia (Tom Price), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-23.25_137.75": "Queensland (Mount Isa), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-26.75_126.75": "Western Australia (Stoneville), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-23.25_143.75": "Queensland (Hughenden), Australia",
+    "-22.75_127.25": "Western Australia (Halls Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "26.75_-9.75": "Tindouf, Algeria [Hoggar-Tassili Volcanic & Canyon Plateau]",
+    "-21.25_136.25": "Northern Territory (Tennant Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-26.75_133.75": "South Australia (Coober Pedy), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-30.25_124.25": "Western Australia (Stoneville), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "-20.25_132.75": "Northern Territory (Tennant Creek), Australia [Yilgarn / Gawler Craton Arid Shield]",
+    "8.25_47.25": "Sool (Laascaanood), Somalia",
+    "-25.75_19.75": "Hardap (Aranos), Namibia [Namib / Brukkaros Volcanic Escarpment]",
+    "41.75_-118.25": "Nevada (Winnemucca), United States",
+    "32.75_47.25": "Ilam (Dehloran), Iran",
+    "30.75_36.25": "Ma'an (Al Jafr), Jordan [Harrat al-Sham Black Basalt & Wadi Rum]",
+    "33.25_47.75": "Lorestan (Poldokhtar), Iran",
+    "15.25_47.75": "Muhafazat Hadramawt (Sana'), Yemen",
+    "36.25_40.25": "Al-Hasakah (Tall Tamr), Syria [Anatolian Volcanic & Maar Belt]",
+    "33.25_-108.25": "New Mexico (Arenas Valley), United States"
   },
   "dem_srtm": {
     "-25.25_16.75_5km": {
@@ -3531,7 +3592,8 @@
       "max_elev_m": 2074.0,
       "relief_m": 114.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "38.25_-111.75_5km": {
       "elevations_m": [
@@ -3633,7 +3695,8 @@
       "max_elev_m": 402.0,
       "relief_m": 24.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "34.75_54.25_5km": {
       "elevations_m": [
@@ -3701,7 +3764,8 @@
       "max_elev_m": 299.0,
       "relief_m": 36.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "24.25_3.25_5km": {
       "elevations_m": [
@@ -3769,7 +3833,8 @@
       "max_elev_m": 223.0,
       "relief_m": 39.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-20.25_125.25_5km": {
       "elevations_m": [
@@ -3803,7 +3868,8 @@
       "max_elev_m": 231.0,
       "relief_m": 29.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-21.25_25.75_5km": {
       "elevations_m": [
@@ -3939,7 +4005,8 @@
       "max_elev_m": 1253.0,
       "relief_m": 46.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "33.75_47.25_5km": {
       "elevations_m": [
@@ -4007,7 +4074,8 @@
       "max_elev_m": 787.0,
       "relief_m": 195.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-19.75_131.75_5km": {
       "elevations_m": [
@@ -4313,7 +4381,8 @@
       "max_elev_m": 389.0,
       "relief_m": 14.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-26.75_19.75_5km": {
       "elevations_m": [
@@ -4347,7 +4416,8 @@
       "max_elev_m": 1022.0,
       "relief_m": 25.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-28.25_141.75_5km": {
       "elevations_m": [
@@ -4381,7 +4451,8 @@
       "max_elev_m": 85.0,
       "relief_m": 11.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "25.75_11.75_5km": {
       "elevations_m": [
@@ -4721,7 +4792,8 @@
       "max_elev_m": 1989.0,
       "relief_m": 720.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "32.75_81.25_5km": {
       "elevations_m": [
@@ -4755,7 +4827,8 @@
       "max_elev_m": 5310.0,
       "relief_m": 466.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "32.25_87.75_5km": {
       "elevations_m": [
@@ -4959,7 +5032,8 @@
       "max_elev_m": 1005.0,
       "relief_m": 105.0,
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry (Measured)",
-      "data_status": "MEASURED_SRTM_DEM"
+      "data_status": "MEASURED_SRTM_DEM",
+      "status_label": "NASA verisinden işlendi"
     },
     "-21.25_19.75_5km": {
       "elevations_m": [
@@ -9304,6 +9378,678 @@
       "unit": "m",
       "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
       "source_url": "https://api.open-meteo.com/v1/elevation?latitude=60.7050,60.7140,60.7230,60.7320,60.7410,60.7500,60.7590,60.7680,60.7770,60.7860,60.7950&longitude=-71.8420,-71.8236,-71.8052,-71.7868,-71.7684,-71.7500,-71.7316,-71.7132,-71.6948,-71.6764,-71.6580",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-27.25_134.25_5km": {
+      "elevations_m": [
+        322.0,
+        317.0,
+        302.0,
+        321.0,
+        329.0,
+        308.0,
+        309.0,
+        274.0,
+        256.0,
+        241.0,
+        234.0
+      ],
+      "min_elev_m": 234.0,
+      "max_elev_m": 329.0,
+      "relief_m": 95.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-27.2950,-27.2860,-27.2770,-27.2680,-27.2590,-27.2500,-27.2410,-27.2320,-27.2230,-27.2140,-27.2050&longitude=134.1994,134.2095,134.2197,134.2298,134.2399,134.2500,134.2601,134.2702,134.2803,134.2905,134.3006",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-27.25_141.75_5km": {
+      "elevations_m": [
+        91.0,
+        98.0,
+        116.0,
+        137.0,
+        133.0,
+        157.0,
+        144.0,
+        127.0,
+        130.0,
+        114.0,
+        143.0
+      ],
+      "min_elev_m": 91.0,
+      "max_elev_m": 157.0,
+      "relief_m": 66.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-27.2950,-27.2860,-27.2770,-27.2680,-27.2590,-27.2500,-27.2410,-27.2320,-27.2230,-27.2140,-27.2050&longitude=141.6994,141.7095,141.7197,141.7298,141.7399,141.7500,141.7601,141.7702,141.7803,141.7905,141.8006",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-22.75_135.75_5km": {
+      "elevations_m": [
+        404.0,
+        419.0,
+        411.0,
+        416.0,
+        411.0,
+        420.0,
+        425.0,
+        441.0,
+        410.0,
+        484.0,
+        423.0
+      ],
+      "min_elev_m": 404.0,
+      "max_elev_m": 484.0,
+      "relief_m": 80.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-22.7950,-22.7860,-22.7770,-22.7680,-22.7590,-22.7500,-22.7410,-22.7320,-22.7230,-22.7140,-22.7050&longitude=135.7012,135.7110,135.7207,135.7305,135.7402,135.7500,135.7598,135.7695,135.7793,135.7890,135.7988",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-26.75_118.25_5km": {
+      "elevations_m": [
+        443.0,
+        444.0,
+        447.0,
+        449.0,
+        452.0,
+        455.0,
+        460.0,
+        465.0,
+        462.0,
+        464.0,
+        469.0
+      ],
+      "min_elev_m": 443.0,
+      "max_elev_m": 469.0,
+      "relief_m": 26.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-26.7950,-26.7860,-26.7770,-26.7680,-26.7590,-26.7500,-26.7410,-26.7320,-26.7230,-26.7140,-26.7050&longitude=118.1996,118.2097,118.2198,118.2299,118.2399,118.2500,118.2601,118.2701,118.2802,118.2903,118.3004",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-32.25_140.25_5km": {
+      "elevations_m": [
+        320.0,
+        335.0,
+        339.0,
+        330.0,
+        339.0,
+        336.0,
+        315.0,
+        307.0,
+        296.0,
+        297.0,
+        298.0
+      ],
+      "min_elev_m": 296.0,
+      "max_elev_m": 339.0,
+      "relief_m": 43.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-32.2950,-32.2860,-32.2770,-32.2680,-32.2590,-32.2500,-32.2410,-32.2320,-32.2230,-32.2140,-32.2050&longitude=140.1968,140.2075,140.2181,140.2287,140.2394,140.2500,140.2606,140.2713,140.2819,140.2925,140.3032",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-25.75_117.25_5km": {
+      "elevations_m": [
+        405.0,
+        414.0,
+        421.0,
+        407.0,
+        403.0,
+        405.0,
+        407.0,
+        409.0,
+        410.0,
+        420.0,
+        417.0
+      ],
+      "min_elev_m": 403.0,
+      "max_elev_m": 421.0,
+      "relief_m": 18.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-25.7950,-25.7860,-25.7770,-25.7680,-25.7590,-25.7500,-25.7410,-25.7320,-25.7230,-25.7140,-25.7050&longitude=117.2001,117.2101,117.2200,117.2300,117.2400,117.2500,117.2600,117.2700,117.2800,117.2899,117.2999",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-24.25_139.75_5km": {
+      "elevations_m": [
+        91.0,
+        91.0,
+        92.0,
+        92.0,
+        92.0,
+        93.0,
+        93.0,
+        93.0,
+        94.0,
+        94.0,
+        95.0
+      ],
+      "min_elev_m": 91.0,
+      "max_elev_m": 95.0,
+      "relief_m": 4.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-24.2950,-24.2860,-24.2770,-24.2680,-24.2590,-24.2500,-24.2410,-24.2320,-24.2230,-24.2140,-24.2050&longitude=139.7007,139.7105,139.7204,139.7303,139.7401,139.7500,139.7599,139.7697,139.7796,139.7895,139.7993",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-22.25_128.75_5km": {
+      "elevations_m": [
+        369.0,
+        368.0,
+        366.0,
+        369.0,
+        369.0,
+        375.0,
+        374.0,
+        377.0,
+        376.0,
+        372.0,
+        373.0
+      ],
+      "min_elev_m": 366.0,
+      "max_elev_m": 377.0,
+      "relief_m": 11.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-22.2950,-22.2860,-22.2770,-22.2680,-22.2590,-22.2500,-22.2410,-22.2320,-22.2230,-22.2140,-22.2050&longitude=128.7014,128.7111,128.7208,128.7306,128.7403,128.7500,128.7597,128.7694,128.7792,128.7889,128.7986",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-26.25_135.25_5km": {
+      "elevations_m": [
+        169.0,
+        174.0,
+        170.0,
+        176.0,
+        189.0,
+        201.0,
+        205.0,
+        191.0,
+        182.0,
+        171.0,
+        169.0
+      ],
+      "min_elev_m": 169.0,
+      "max_elev_m": 205.0,
+      "relief_m": 36.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-26.2950,-26.2860,-26.2770,-26.2680,-26.2590,-26.2500,-26.2410,-26.2320,-26.2230,-26.2140,-26.2050&longitude=135.1999,135.2099,135.2199,135.2299,135.2400,135.2500,135.2600,135.2701,135.2801,135.2901,135.3001",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-20.75_135.25_5km": {
+      "elevations_m": [
+        430.0,
+        474.0,
+        468.0,
+        440.0,
+        441.0,
+        382.0,
+        380.0,
+        385.0,
+        377.0,
+        375.0,
+        363.0
+      ],
+      "min_elev_m": 363.0,
+      "max_elev_m": 474.0,
+      "relief_m": 111.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-20.7950,-20.7860,-20.7770,-20.7680,-20.7590,-20.7500,-20.7410,-20.7320,-20.7230,-20.7140,-20.7050&longitude=135.2019,135.2115,135.2211,135.2308,135.2404,135.2500,135.2596,135.2692,135.2789,135.2885,135.2981",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-20.75_134.25_5km": {
+      "elevations_m": [
+        358.0,
+        357.0,
+        357.0,
+        358.0,
+        359.0,
+        361.0,
+        362.0,
+        365.0,
+        366.0,
+        367.0,
+        371.0
+      ],
+      "min_elev_m": 357.0,
+      "max_elev_m": 371.0,
+      "relief_m": 14.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-20.7950,-20.7860,-20.7770,-20.7680,-20.7590,-20.7500,-20.7410,-20.7320,-20.7230,-20.7140,-20.7050&longitude=134.2019,134.2115,134.2211,134.2308,134.2404,134.2500,134.2596,134.2692,134.2789,134.2885,134.2981",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-30.75_142.25_5km": {
+      "elevations_m": [
+        176.0,
+        171.0,
+        162.0,
+        170.0,
+        173.0,
+        181.0,
+        182.0,
+        186.0,
+        200.0,
+        207.0,
+        205.0
+      ],
+      "min_elev_m": 162.0,
+      "max_elev_m": 207.0,
+      "relief_m": 45.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-30.7950,-30.7860,-30.7770,-30.7680,-30.7590,-30.7500,-30.7410,-30.7320,-30.7230,-30.7140,-30.7050&longitude=142.1977,142.2081,142.2186,142.2291,142.2395,142.2500,142.2605,142.2709,142.2814,142.2919,142.3023",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-22.25_122.75_5km": {
+      "elevations_m": [
+        274.0,
+        271.0,
+        273.0,
+        268.0,
+        265.0,
+        264.0,
+        260.0,
+        263.0,
+        256.0,
+        256.0,
+        254.0
+      ],
+      "min_elev_m": 254.0,
+      "max_elev_m": 274.0,
+      "relief_m": 20.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-22.2950,-22.2860,-22.2770,-22.2680,-22.2590,-22.2500,-22.2410,-22.2320,-22.2230,-22.2140,-22.2050&longitude=122.7014,122.7111,122.7208,122.7306,122.7403,122.7500,122.7597,122.7694,122.7792,122.7889,122.7986",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-26.75_135.25_5km": {
+      "elevations_m": [
+        150.0,
+        150.0,
+        151.0,
+        150.0,
+        150.0,
+        149.0,
+        146.0,
+        147.0,
+        146.0,
+        143.0,
+        144.0
+      ],
+      "min_elev_m": 143.0,
+      "max_elev_m": 151.0,
+      "relief_m": 8.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-26.7950,-26.7860,-26.7770,-26.7680,-26.7590,-26.7500,-26.7410,-26.7320,-26.7230,-26.7140,-26.7050&longitude=135.1996,135.2097,135.2198,135.2299,135.2399,135.2500,135.2601,135.2701,135.2802,135.2903,135.3004",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-18.75_128.75_5km": {
+      "elevations_m": [
+        401.0,
+        406.0,
+        405.0,
+        390.0,
+        377.0,
+        376.0,
+        372.0,
+        365.0,
+        366.0,
+        369.0,
+        371.0
+      ],
+      "min_elev_m": 365.0,
+      "max_elev_m": 406.0,
+      "relief_m": 41.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-18.7950,-18.7860,-18.7770,-18.7680,-18.7590,-18.7500,-18.7410,-18.7320,-18.7230,-18.7140,-18.7050&longitude=128.7025,128.7120,128.7215,128.7310,128.7405,128.7500,128.7595,128.7690,128.7785,128.7880,128.7975",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-27.75_143.25_5km": {
+      "elevations_m": [
+        192.0,
+        177.0,
+        168.0,
+        162.0,
+        168.0,
+        164.0,
+        161.0,
+        168.0,
+        179.0,
+        183.0,
+        186.0
+      ],
+      "min_elev_m": 161.0,
+      "max_elev_m": 192.0,
+      "relief_m": 31.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-27.7950,-27.7860,-27.7770,-27.7680,-27.7590,-27.7500,-27.7410,-27.7320,-27.7230,-27.7140,-27.7050&longitude=143.1992,143.2094,143.2195,143.2297,143.2398,143.2500,143.2602,143.2703,143.2805,143.2906,143.3008",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-26.75_126.75_5km": {
+      "elevations_m": [
+        484.0,
+        489.0,
+        509.0,
+        503.0,
+        501.0,
+        488.0,
+        489.0,
+        493.0,
+        501.0,
+        498.0,
+        484.0
+      ],
+      "min_elev_m": 484.0,
+      "max_elev_m": 509.0,
+      "relief_m": 25.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-26.7950,-26.7860,-26.7770,-26.7680,-26.7590,-26.7500,-26.7410,-26.7320,-26.7230,-26.7140,-26.7050&longitude=126.6996,126.7097,126.7198,126.7299,126.7399,126.7500,126.7601,126.7701,126.7802,126.7903,126.8004",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-23.25_137.75_5km": {
+      "elevations_m": [
+        167.0,
+        168.0,
+        169.0,
+        194.0,
+        213.0,
+        184.0,
+        183.0,
+        179.0,
+        185.0,
+        192.0,
+        197.0
+      ],
+      "min_elev_m": 167.0,
+      "max_elev_m": 213.0,
+      "relief_m": 46.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-23.2950,-23.2860,-23.2770,-23.2680,-23.2590,-23.2500,-23.2410,-23.2320,-23.2230,-23.2140,-23.2050&longitude=137.7011,137.7108,137.7206,137.7304,137.7402,137.7500,137.7598,137.7696,137.7794,137.7892,137.7989",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-24.75_116.25_5km": {
+      "elevations_m": [
+        314.0,
+        307.0,
+        303.0,
+        301.0,
+        297.0,
+        295.0,
+        293.0,
+        293.0,
+        296.0,
+        297.0,
+        300.0
+      ],
+      "min_elev_m": 293.0,
+      "max_elev_m": 314.0,
+      "relief_m": 21.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-24.7950,-24.7860,-24.7770,-24.7680,-24.7590,-24.7500,-24.7410,-24.7320,-24.7230,-24.7140,-24.7050&longitude=116.2005,116.2104,116.2203,116.2302,116.2401,116.2500,116.2599,116.2698,116.2797,116.2896,116.2995",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-23.25_143.75_5km": {
+      "elevations_m": [
+        214.0,
+        214.0,
+        234.0,
+        214.0,
+        200.0,
+        196.0,
+        190.0,
+        196.0,
+        199.0,
+        206.0,
+        208.0
+      ],
+      "min_elev_m": 190.0,
+      "max_elev_m": 234.0,
+      "relief_m": 44.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-23.2950,-23.2860,-23.2770,-23.2680,-23.2590,-23.2500,-23.2410,-23.2320,-23.2230,-23.2140,-23.2050&longitude=143.7011,143.7108,143.7206,143.7304,143.7402,143.7500,143.7598,143.7696,143.7794,143.7892,143.7989",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "-20.25_132.75_5km": {
+      "elevations_m": [
+        376.0,
+        364.0,
+        370.0,
+        357.0,
+        349.0,
+        330.0,
+        328.0,
+        320.0,
+        315.0,
+        303.0,
+        301.0
+      ],
+      "min_elev_m": 301.0,
+      "max_elev_m": 376.0,
+      "relief_m": 75.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-20.2950,-20.2860,-20.2770,-20.2680,-20.2590,-20.2500,-20.2410,-20.2320,-20.2230,-20.2140,-20.2050&longitude=132.7021,132.7117,132.7212,132.7308,132.7404,132.7500,132.7596,132.7692,132.7788,132.7883,132.7979",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "41.75_-118.25_5km": {
+      "elevations_m": [
+        1720.0,
+        1558.0,
+        1465.0,
+        1437.0,
+        1353.0,
+        1316.0,
+        1299.0,
+        1291.0,
+        1290.0,
+        1291.0,
+        1295.0
+      ],
+      "min_elev_m": 1290.0,
+      "max_elev_m": 1720.0,
+      "relief_m": 430.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=41.7050,41.7140,41.7230,41.7320,41.7410,41.7500,41.7590,41.7680,41.7770,41.7860,41.7950&longitude=-118.3103,-118.2982,-118.2862,-118.2741,-118.2621,-118.2500,-118.2379,-118.2259,-118.2138,-118.2018,-118.1897",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "32.75_47.25_5km": {
+      "elevations_m": [
+        208.0,
+        222.0,
+        238.0,
+        272.0,
+        297.0,
+        362.0,
+        513.0,
+        626.0,
+        1015.0,
+        914.0,
+        969.0
+      ],
+      "min_elev_m": 208.0,
+      "max_elev_m": 1015.0,
+      "relief_m": 807.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=32.7050,32.7140,32.7230,32.7320,32.7410,32.7500,32.7590,32.7680,32.7770,32.7860,32.7950&longitude=47.1965,47.2072,47.2179,47.2286,47.2393,47.2500,47.2607,47.2714,47.2821,47.2928,47.3035",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "36.25_40.25_5km": {
+      "elevations_m": [
+        459.0,
+        466.0,
+        469.0,
+        467.0,
+        465.0,
+        466.0,
+        475.0,
+        480.0,
+        484.0,
+        490.0,
+        516.0
+      ],
+      "min_elev_m": 459.0,
+      "max_elev_m": 516.0,
+      "relief_m": 57.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=36.2050,36.2140,36.2230,36.2320,36.2410,36.2500,36.2590,36.2680,36.2770,36.2860,36.2950&longitude=40.1942,40.2054,40.2165,40.2277,40.2388,40.2500,40.2612,40.2723,40.2835,40.2946,40.3058",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "33.25_47.75_5km": {
+      "elevations_m": [
+        864.0,
+        1069.0,
+        783.0,
+        696.0,
+        714.0,
+        702.0,
+        736.0,
+        859.0,
+        866.0,
+        866.0,
+        821.0
+      ],
+      "min_elev_m": 696.0,
+      "max_elev_m": 1069.0,
+      "relief_m": 373.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=33.2050,33.2140,33.2230,33.2320,33.2410,33.2500,33.2590,33.2680,33.2770,33.2860,33.2950&longitude=47.6962,47.7070,47.7177,47.7285,47.7392,47.7500,47.7608,47.7715,47.7823,47.7930,47.8038",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "30.75_36.25_5km": {
+      "elevations_m": [
+        881.0,
+        872.0,
+        879.0,
+        885.0,
+        874.0,
+        887.0,
+        886.0,
+        882.0,
+        891.0,
+        911.0,
+        901.0
+      ],
+      "min_elev_m": 872.0,
+      "max_elev_m": 911.0,
+      "relief_m": 39.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=30.7050,30.7140,30.7230,30.7320,30.7410,30.7500,30.7590,30.7680,30.7770,30.7860,30.7950&longitude=36.1977,36.2081,36.2186,36.2291,36.2395,36.2500,36.2605,36.2709,36.2814,36.2919,36.3023",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "33.25_-108.25_5km": {
+      "elevations_m": [
+        1973.0,
+        1996.0,
+        1961.0,
+        1741.0,
+        1799.0,
+        1912.0,
+        1944.0,
+        1937.0,
+        2047.0,
+        2046.0,
+        2140.0
+      ],
+      "min_elev_m": 1741.0,
+      "max_elev_m": 2140.0,
+      "relief_m": 399.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=33.2050,33.2140,33.2230,33.2320,33.2410,33.2500,33.2590,33.2680,33.2770,33.2860,33.2950&longitude=-108.3038,-108.2930,-108.2823,-108.2715,-108.2608,-108.2500,-108.2392,-108.2285,-108.2177,-108.2070,-108.1962",
+      "status_label": "NASA verisinden işlendi",
+      "data_status": "MEASURED_SRTM_DEM"
+    },
+    "15.25_47.75_5km": {
+      "elevations_m": [
+        1395.0,
+        1386.0,
+        1357.0,
+        1321.0,
+        1366.0,
+        1355.0,
+        1351.0,
+        1369.0,
+        1364.0,
+        1365.0,
+        1359.0
+      ],
+      "min_elev_m": 1321.0,
+      "max_elev_m": 1395.0,
+      "relief_m": 74.0,
+      "uncertainty_m": 8.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 / NASA SRTM 90m Radar Altimetry",
+      "source_url": "https://api.open-meteo.com/v1/elevation?latitude=15.2050,15.2140,15.2230,15.2320,15.2410,15.2500,15.2590,15.2680,15.2770,15.2860,15.2950&longitude=47.7034,47.7127,47.7220,47.7314,47.7407,47.7500,47.7593,47.7686,47.7780,47.7873,47.7966",
       "status_label": "NASA verisinden işlendi",
       "data_status": "MEASURED_SRTM_DEM"
     }
